@@ -34,18 +34,45 @@ void (timer_int_handler)() {
 int (timer_get_conf)(uint8_t timer, uint8_t *st) {
   uint8_t rbcommand = TIMER_RB_CMD | TIMER_RB_COUNT_ | TIMER_RB_SEL(timer);
   sys_outb(TIMER_CTRL, rbcommand);
-  sys_inb(st, );
   
-  
-  printf("%s is not yet implemented!\n", __func__);
-  
-  return 1;
+  return util_sys_inb(TIMER(timer), st);
 }
 
 int (timer_display_conf)(uint8_t timer, uint8_t st,
                         enum timer_status_field field) {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  
+  union timer_status_field_val idk;
 
-  return 1;
+  switch (field) {
+  case tsf_all:
+    idk.byte = st;
+    break;
+
+  case tsf_initial:
+    uint8_t mask = BIT(5) | BIT(4);
+    uint8_t thing = (st & mask) >> 4;
+
+    switch (thing) {
+      case 1:
+
+        break;
+      case 2:
+        
+        break;
+      case 3:
+
+        break;
+    }
+
+    conf.in_mode = 
+    break;
+  case tsf_mode:
+    
+    break;
+  case tsf_base:
+    
+    break;
+  }
+
+  return 0;
 }
