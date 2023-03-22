@@ -6,29 +6,54 @@
 #include "i8254.h"
 
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  uint8_t cw = 0;
+  timer_get_conf(timer, &cw);
+  cw <<= 4;
+  cw >>= 4;
+  
+  switch(timer) {
+    case 0 : {
+      cw |= TIMER_SEL0;
+      break;
+    } case 1 : {
+      cw |= TIMER_SEL1;
+      break;
+    } case 2 : {
+      cw |= TIMER_SEL2;
+      break;
+    }
+  }
 
-  return 1;
+  cw |= TIMER_LSB_MSB;
+  sys_outb(TIMER_CTRL, cw);
+
+  uint16_t cnt = TIMER_FREQ / freq;
+  uint8_t lsb = 0, msb = 0;
+
+  util_get_LSB(cnt, &lsb);
+  util_get_MSB(cnt, &msb);
+
+  sys_outb(TIMER(timer), lsb);
+  sys_outb(TIMER(timer), msb);
+
+  return 0;
 }
 
-int (timer_subscribe_int)(uint8_t *bit_no) {
-    /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+int hook = 0;
+int count = 0;
 
-  return 1;
+int (timer_subscribe_int)(uint8_t *bit_no) {
+  hook = *bit_no;
+  
+  return sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &hook);
 }
 
 int (timer_unsubscribe_int)() {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
-
-  return 1;
+  return sys_irqrmpolicy(&hook);
 }
 
 void (timer_int_handler)() {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  ++count;
 }
 
 int (timer_get_conf)(uint8_t timer, uint8_t *st) {
@@ -44,35 +69,38 @@ int (timer_display_conf)(uint8_t timer, uint8_t st,
   union timer_status_field_val idk;
 
   switch (field) {
-  case tsf_all:
-    idk.byte = st;
-    break;
+    case tsf_all: {
+      idk.byte = st;
+      break;
+    } case tsf_initial: {
+      uint8_t mask = BIT(5) | BIT(4);
+      uint8_t thing = (st & mask) >> 4; //evaluate the 5th and 4th bits only
 
-  case tsf_initial:
-    uint8_t mask = BIT(5) | BIT(4);
-    uint8_t thing = (st & mask) >> 4;
+      if (thing == 1) {
+          idk.in_mode = LSB_only;
+      } else if (thing == 2) {
+        idk.in_mode = MSB_only;
+      } else if (thing == 3) {
+        idk.in_mode = MSB_after_LSB;
+      } else {
+        idk.in_mode = INVAL_val;
+      } break;
+    } case tsf_mode: {
+      st = (st >> 1) & 0x07;
 
-    switch (thing) {
-      case 1:
+      if(st == 6) idk.count_mode = 2;
+      else if(st == 7) idk.count_mode = 3;
+      else idk.count_mode = st;
 
-        break;
-      case 2:
-        
-        break;
-      case 3:
-
-        break;
+      break;
+    } case tsf_base: {
+      uint8_t mask = 1;
+      st &= mask;
+      idk.bcd = st;
+      break;
+    } default: {
+      return 1;
     }
-
-    conf.in_mode = 
-    break;
-  case tsf_mode:
-    
-    break;
-  case tsf_base:
-    
-    break;
-  }
-
-  return 0;
+  } 
+  return timer_print_config(timer, field, idk);
 }

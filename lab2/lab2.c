@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+extern int count;
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -30,23 +31,40 @@ int main(int argc, char *argv[]) {
 }
 
 int(timer_test_read_config)(uint8_t timer, enum timer_status_field field) {
-  //timer_get_conf(timer, );
-  //timer_display_conf(timer, );
-  printf("%s is not yet implemented!\n", __func__);
-
-  return 1;
+  uint8_t st = 0;
+  timer_get_conf(timer, &st);
+  return timer_display_conf(timer, st, field);
 }
 
 int(timer_test_time_base)(uint8_t timer, uint32_t freq) {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
-
-  return 1;
+  return timer_set_frequency(timer, freq);
 }
 
 int(timer_test_int)(uint8_t time) {
-  /* To be implemented by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  int ipcstatus = 0, driver = 0;
+  uint8_t hookid = 0;
+  uint32_t bit = BIT(hookid);
+  message msg;
 
-  return 1;
+  if(timer_subscribe_int(&hookid)) return 1;
+  while(time > 0) {
+    if((driver = driver_receive(ANY, &msg, &ipcstatus)) != 0) {
+      printf("Erro a ler");
+    } else {
+      if(is_ipc_notify(ipcstatus)) {
+        switch(_ENDPOINT_P(msg.m_source)) {
+          case HARDWARE:
+          if(msg.m_notify.interrupts & bit) {
+            timer_int_handler();
+            if(count % 60 == 0){
+              timer_print_elapsed_time();
+              time--;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return timer_unsubscribe_int();
 }

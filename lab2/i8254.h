@@ -51,6 +51,7 @@
 #define TIMER_RB_COUNT_  BIT(5)
 #define TIMER_RB_STATUS_ BIT(4)
 #define TIMER_RB_SEL(n)  BIT((n) + 1)
+#define TIMER(n) 0x40 + n
 
 /**@}*/
 
