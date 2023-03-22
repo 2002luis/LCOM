@@ -6,8 +6,6 @@
 #define KBD_OUT_BUF 0x60
 #define KBD_STAT_REG 0x64
 
-
-
 #define DELAY_US    20000
 
 extern int hook_id;
@@ -48,11 +46,11 @@ int (kbd_test_poll)(){
   return 0;
 }
 
-int (kbd_test_timed_scan)(uint8_t idle){
+int (kbd_test_timed_scan)(uint8_t idle) {
   return 1;
 }
 
-int (kbd_test_scan)(){
+int (kbd_test_scan)() {
   int ipcstatus, driver;
   uint8_t coco = 2;
   uint32_t hookid = BIT(coco);
@@ -61,28 +59,25 @@ int (kbd_test_scan)(){
   bool make;
 
   kbd_subscribe(&coco);
-  while(kbd_read != 0x81){
+  while(kbd_read != 0x81) {
 
-  if((driver = driver_receive(ANY,&msg,&ipcstatus))!=0){ //se houver algum erro a ler
+  if((driver = driver_receive(ANY,&msg,&ipcstatus))!=0) { //se houver algum erro a ler
     printf("Erro a ler");
-  }
-  else{ //else
-    if(is_ipc_notify(ipcstatus)){ //se tiver recebido um interrupt da merda q quero
-      switch(_ENDPOINT_P(msg.m_source)){
+  } else { //else
+    if(is_ipc_notify(ipcstatus)) { //se tiver recebido um interrupt da merda q quero
+      switch(_ENDPOINT_P(msg.m_source)) {
         case HARDWARE: //SE FOR HARDWARE INTERRUPT
-        if(msg.m_notify.interrupts & hookid){ //SE TIVER VINDO DO SITIO QUE EU QUERO
+        if(msg.m_notify.interrupts & hookid) { //SE TIVER VINDO DO SITIO QUE EU QUERO
           kbc_ih();
-          if(kbd_read == 0xe0){
+          if(kbd_read == 0xe0) {
               bytes[0] = 0xe0;
 
-          }
-          else{
+          } else {
               make = !(kbd_read & BIT(7));
-              if(bytes[0] == 0xe0){
+              if(bytes[0] == 0xe0) {
                   bytes[1] = kbd_read;
                   kbd_print_scancode(make, 2, bytes);
-              }
-              else {
+              } else {
                   bytes[0] = kbd_read;
                   kbd_print_scancode(make, 1, bytes);
               }

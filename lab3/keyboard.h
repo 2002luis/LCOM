@@ -1,4 +1,3 @@
-
 void (kbc_ih)();
 
 int (kbd_subscribe)(uint8_t *bit_no);

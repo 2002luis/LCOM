@@ -5,14 +5,10 @@
 #define KBD_OUT_BUF 0x60
 #define KBD_STAT_REG 0x64
 
-
-
 #define DELAY_US    20000
 
 int hook_id;
 uint8_t kbd_read = 0x00;
-
-
 
 void (kbc_ih)(){
   uint8_t b;
