@@ -67,10 +67,7 @@ int (map_vram)(uint16_t mode) {
 }
 
 void(draw_pixel)(uint16_t x, uint16_t y, uint32_t color) {
-  uint64_t offset = ((y * vmi.XResolution) + x) * bytes_per_pixel;
-  void *addr = (void *)((char *) video_mem + offset);
-
-  memcpy(addr, &color, bytes_per_pixel);
+  
 }
 
 int(vg_draw_hline)(uint16_t x, uint16_t y, uint16_t len, uint32_t color) {
