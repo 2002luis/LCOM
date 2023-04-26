@@ -3,7 +3,6 @@
 #include "pixmap.h"
 #include "xpm.h"
 #include "vbe.h"
-#include "video_gr.h"
  
 int (video_test_init)(uint16_t mode, uint8_t delay);
  

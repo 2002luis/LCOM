@@ -3,6 +3,9 @@
 
 #include <lcom/lab5.h>
 
+#include "video_gr.h"
+#include "keyboard.h"
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -42,8 +45,26 @@ int(video_test_init)(uint16_t mode, uint8_t delay) {
 
 int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
                           uint16_t width, uint16_t height, uint32_t color) {
+  if(vg_init(mode)!=OK) {
+    vg_exit();
+    return 1;
+  }
+  if(map_vram(mode)) {
+    vg_exit();
+    return 1;
+  }
+  if(vg_draw_rectangle(x,y,width,height,color)) {
+    vg_exit();
+    return 1;
+  }
 
-  return 1;
+  if(kbd_loop()) {
+    vg_exit();
+    return 1;
+  }
+
+  vg_exit();
+  return 0;
 }
 
 int(video_test_pattern)(uint16_t mode, uint8_t no_rectangles, uint32_t first, uint8_t step) {
