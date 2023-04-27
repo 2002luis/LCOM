@@ -4,14 +4,15 @@
 #include "keyboard.h"
 
 static void *video_mem;
-static int vram_size;
-static int bytes_per_pixel;
 vbe_mode_info_t vmi;
-
-extern int kbd_read;
 
 void *(vg_init)(uint16_t mode) {
   reg86_t reg86;
+
+  if(map_vram(mode)) {
+    printf("sexo...");
+    return NULL;
+  }
 
   memset(&reg86, 0, sizeof(reg86));
 
@@ -23,7 +24,7 @@ void *(vg_init)(uint16_t mode) {
     printf("\tvg_init(): sys_int86() failed \n");
     return NULL;
   }
-  return NULL;
+  return video_mem;
 }
 
 int (map_vram)(uint16_t mode) {
@@ -31,34 +32,38 @@ int (map_vram)(uint16_t mode) {
 
   unsigned int vram_base;  /* VRAM's physical addresss */
 
-  //unsigned int vram_size;
+  unsigned int vram_size;
   /* VRAM's size, but you can use
               the frame-buffer size, instead */
+
+  unsigned int bytes_per_pixel;
+
   int r;
 
   /* Use VBE function 0x01 to initialize vram_base and vram_size */
 
-  if(vbe_get_mode_info(mode,&vmi)!=OK) {
+  memset(&vmi, 0, sizeof(vmi));
+  if(vbe_get_mode_info(mode, &vmi)!=OK) {
     return 1;
   }
 
   vram_base = vmi.PhysBasePtr;
-  bytes_per_pixel = vmi.BytesPerScanLine / vmi.XResolution;
+  bytes_per_pixel = (vmi.BitsPerPixel + 7) / 8;
   vram_size = (vmi.XResolution * vmi.YResolution) * bytes_per_pixel;
 
   /* Allow memory mapping */
 
   mr.mr_base = (phys_bytes) vram_base;
-  mr.mr_limit = mr.mr_base + vram_size;  
+  mr.mr_limit = mr.mr_base + vram_size;
 
   if( OK != (r = sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr))){
     panic("sys_privctl (ADD_MEM) failed: %d\n", r);
-        return 1;
+    return 1;
   }
 
   /* Map memory */
 
-  video_mem = vm_map_phys(SELF, (void *)mr.mr_base, vram_size);
+  video_mem = vm_map_phys(SELF, (void *) mr.mr_base, vram_size);
 
   if(video_mem == MAP_FAILED) {
     panic("couldn't map video memory");
@@ -68,58 +73,36 @@ int (map_vram)(uint16_t mode) {
   return 0;
 }
 
-int(vg_draw_hline)(uint16_t x, uint16_t y, uint16_t len, uint32_t color) {
-  uint8_t bytes = (vmi.BitsPerPixel + 7) >> 3;
-  uint8_t* base = (uint8_t*) video_mem +(y * vmi. XResolution + x) * bytes;
+int(vg_draw_pixel)(uint16_t x, uint16_t y, uint32_t color) {
 
-  for(uint16_t i = 0; 1 < len; ++i) {
-    for(uint8_t j = 0; j < bytes; ++j) {
-      *base = color >> (j * 8);
-      ++base;
+  uint8_t bytes = (vmi.BitsPerPixel + 7) / 8;
+  uint8_t* base = (uint8_t*) video_mem + (y * vmi. XResolution + x) * bytes;
+
+  for(uint8_t i = 0; i < bytes; i++){
+    *base = color >> (i * 8);
+    base++;
+  }
+
+  return 0;
+}
+
+int(vg_draw_hline)(uint16_t x, uint16_t y, uint16_t width, uint32_t color) {
+  for(uint16_t i = 0; i < width; i++) {
+    if (vg_draw_pixel(x + i, y, color) != 0) {
+      return 1;
     }
   }
 
-  return EXIT_SUCCESS;
+  return 0;
 }
 
 int (vg_draw_rectangle)(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color) {
-  if (y + height > vmi.YResolution)
-    height = vmi.YResolution - y;
-  
-  if (x + width > vmi.XResolution)
-    width = vmi.XResolution - x;
-
-  for(uint16_t i = y; i < y + height + i; i++) {
-    vg_draw_hline(x, i, width, color);
-  }
-
-  return EXIT_SUCCESS;
-}
-
-int(kbd_loop)() {
-  int ipcstatus, driver;
-  uint8_t coco = 2;
-  uint32_t hookid = BIT(coco);
-  message msg;
-
-  kbd_subscribe(&coco);
-
-  while(kbd_read != 0x81) {
-    if((driver = driver_receive(ANY,&msg,&ipcstatus))!=0) {
-      printf("Erro a ler");
-    } else { //else
-      if(is_ipc_notify(ipcstatus)) {
-        switch(_ENDPOINT_P(msg.m_source)) {
-          case HARDWARE: 
-            if(msg.m_notify.interrupts & hookid) {
-              kbc_ih();
-            }
-            break;
-          default:
-            break;
-        }
-      }
+  for(uint16_t i = 0; i < height; i++) {
+    if (vg_draw_hline(x, y + i, width, color) != 0) {
+      vg_exit();
+      return 1;
     }
   }
-  return kbd_unsubscribe();
+
+  return 0;
 }

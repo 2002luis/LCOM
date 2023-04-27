@@ -35,31 +35,40 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+extern void *video_mem;
+extern vbe_mode_info_t vmi;
+
+extern int kbd_read;
+
 int(video_test_init)(uint16_t mode, uint8_t delay) {
-  vg_init(mode);
+  if(vg_init(mode) == NULL) {
+    vg_exit();
+  }
+
   sleep(delay);
   vg_exit();
 
-  return 1;
+  return 0;
 }
 
 int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
                           uint16_t width, uint16_t height, uint32_t color) {
-  if(vg_init(mode)!=OK) {
+                    
+  if(vg_init(mode) == NULL) {
     vg_exit();
+    printf("init sexo");
     return 1;
   }
-  if(map_vram(mode)) {
-    vg_exit();
-    return 1;
-  }
+
   if(vg_draw_rectangle(x,y,width,height,color)) {
     vg_exit();
+    printf("rec sexo");
     return 1;
   }
 
   if(kbd_loop()) {
     vg_exit();
+    printf("kbd sexo");
     return 1;
   }
 
@@ -96,4 +105,32 @@ int(video_test_controller)() {
   printf("%s(): under construction\n", __func__);
 
   return 1;
+}
+
+int(kbd_loop)() {
+  int ipcstatus, driver;
+  uint8_t coco = 2;
+  uint32_t hookid = BIT(coco);
+  message msg;
+
+  kbd_subscribe(&coco);
+
+  while(kbd_read != 0x90) {
+    if((driver = driver_receive(ANY,&msg,&ipcstatus))!=0) {
+      printf("Erro a ler");
+    } else { //else
+      if(is_ipc_notify(ipcstatus)) {
+        switch(_ENDPOINT_P(msg.m_source)) {
+          case HARDWARE: 
+            if(msg.m_notify.interrupts & hookid) {
+              kbc_ih();
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  }
+  return kbd_unsubscribe();
 }

@@ -1,27 +1,96 @@
 @lcflib.a:2019, lcf_start
   video_test_rectangle(mode, x, y, width, height, color)
-> video_test_rectangle(0x105, 5, 5, 5, 5, 0x00000010 [16])
-  @lab5.c:48, video_test_rectangle
+> video_test_rectangle(0x11a, 10, 10, 10, 10, 0x00001111 [4369])
+  @lab5.c:57, video_test_rectangle
     vg_init(mode)
-  > vg_init(0x105)
-    @video_gr.c:22, vg_init
+  > vg_init(0x11a)
+    @video_gr.c:46, map_vram
+      vbe_get_mode_info(mode, &vmi)
+    > vbe_get_mode_info(0x11a, addr: 0x8248be0)
+    < vbe_get_mode_info(0x11a, addr: 0x8248be0 [0xe0000000, 1280x1024, 5:6:5 (16) <2.5 MiB>]) -> (ret: 0)
+    @video_gr.c:59, map_vram
+      sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr)
+    > sys_privctl(SELF, SYS_PRIV_ADD_MEM, addr: 0xeffff4e8 [0xe0000000 - 0xe0280000 <2.5 MiB>])
+    < sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr) -> (ret: 0)
+    @video_gr.c:66, map_vram
+      vm_map_phys(SELF, (void *) mr.mr_base, vram_size)
+    < vm_map_phys(SELF, addr: 0xe0000000, 2.5 MiB) -> (ret: 0xef77b000)
+    @video_gr.c:23, vg_init
       sys_int86(&reg86)
-    > sys_int86(addr: 0xeffff520 [AX: 4f02, BX: 4105, CX: 0000, DX: 0000, ES: 0000, DI: 0000])
-    < sys_int86(addr: 0xeffff520 [AX: 004f, BX: 4105, CX: 0000, DX: 0000, ES: 0000, DI: 0000]) -> (ret: 0)
-  < vg_init(0x105) -> (ret: 0x0)
-  @video_gr.c:41, map_vram
-    vbe_get_mode_info(mode, &vmi)
-  > vbe_get_mode_info(0x105, addr: 0x8248be0)
-  < vbe_get_mode_info(0x105, addr: 0x8248be0 [0xe0000000, 1024x768, Indexed (8 BPP) <768 KiB>]) -> (ret: 0)
-  @video_gr.c:54, map_vram
-    sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr)
-  > sys_privctl(SELF, SYS_PRIV_ADD_MEM, addr: 0xeffff5f8 [0xe0000000 - 0xe00c0000 <768 KiB>])
-  < sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr) -> (ret: 0)
-  @video_gr.c:61, map_vram
-    vm_map_phys(SELF, (void *)mr.mr_base, vram_size)
-  < vm_map_phys(SELF, addr: 0xe0000000, 768 KiB) -> (ret: 0xef93b000)
-  @lab5.c:56, video_test_rectangle
+    > sys_int86(addr: 0xeffff520 [AX: 4f02, BX: 411a, CX: 0000, DX: 0000, ES: 0000, DI: 0000])
+    < sys_int86(addr: 0xeffff520 [AX: 004f, BX: 411a, CX: 0000, DX: 0000, ES: 0000, DI: 0000]) -> (ret: 0)
+  < vg_init(0x11a) -> (ret: 0xef77b000)
+  @lab5.c:63, video_test_rectangle
     vg_draw_rectangle(x, y, width, height, color)
-  > vg_draw_rectangle(5, 5, 5, 5, 0x00000010 [16])
-    @video_gr.c:93, vg_draw_rectangle
-      vg_draw_hline(x, i, width, color)
+  > vg_draw_rectangle(10, 10, 10, 10, 0x00001111 [4369])
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 10, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 11, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 12, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 13, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 14, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 15, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 16, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 17, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 18, 10, 0x00001111 [4369]) -> (ret: 0)
+    @video_gr.c:101, vg_draw_rectangle
+      vg_draw_hline(x, y + i, width, color)
+    < vg_draw_hline(10, 19, 10, 0x00001111 [4369]) -> (ret: 0)
+  < vg_draw_rectangle(10, 10, 10, 10, 0x00001111 [4369]) -> (ret: 0)
+  @keyboard.c:23, kbd_subscribe
+    sys_irqsetpolicy(KBD_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &hook_id)
+  > sys_irqsetpolicy(1, 3, addr: 0x8248ce0 [2])
+  < sys_irqsetpolicy(1, 3, addr: 0x8248ce0 [10]) -> (ret: 0)
+  @lab5.c:119, kbd_loop
+    driver_receive(ANY, &msg, &ipcstatus)
+  > driver_receive(ANY, addr: 0xeffff5a0, addr: 0xeffff5e8)
+  < driver_receive(<[HARDWARE: 0b0000000000000000000000000000000000000000000000000000000000000100]>)
+  @lab5.c:126, kbd_loop
+    kbc_ih()
+    @utils.c:28, util_sys_inb
+      sys_inb(port, &out)
+    > sys_inb(0x64, addr: 0xeffff4bc)
+    < sys_inb(0x64, addr: 0xeffff4bc [0x1d = 0b00011101])
+    @utils.c:28, util_sys_inb
+      sys_inb(port, &out)
+    > sys_inb(0x60, addr: 0xeffff4bc)
+    < sys_inb(0x60, addr: 0xeffff4bc [0x10 = 0b00010000])
+  @lab5.c:119, kbd_loop
+    driver_receive(ANY, &msg, &ipcstatus)
+  > driver_receive(ANY, addr: 0xeffff5a0, addr: 0xeffff5e8)
+  < driver_receive(<[HARDWARE: 0b0000000000000000000000000000000000000000000000000000000000000100]>)
+  @lab5.c:126, kbd_loop
+    kbc_ih()
+    @utils.c:28, util_sys_inb
+      sys_inb(port, &out)
+    > sys_inb(0x64, addr: 0xeffff4bc)
+    < sys_inb(0x64, addr: 0xeffff4bc [0x1d = 0b00011101])
+    @utils.c:28, util_sys_inb
+      sys_inb(port, &out)
+    > sys_inb(0x60, addr: 0xeffff4bc)
+    < sys_inb(0x60, addr: 0xeffff4bc [0x90 = 0b10010000])
+  @keyboard.c:27, kbd_unsubscribe
+    sys_irqrmpolicy(&hook_id)
+  > sys_irqrmpolicy(addr: 0x8248ce0 [10])
+  < sys_irqrmpolicy(addr: 0x8248ce0 [10]) -> (ret: 0)
+  @lab5.c:75, video_test_rectangle
+    vg_exit()
+  < vg_exit() -> (ret: 0)
+< video_test_rectangle(0x11a, 10, 10, 10, 10, 0x00001111 [4369]) -> (ret: 0)
