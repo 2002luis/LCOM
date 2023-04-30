@@ -56,19 +56,16 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
                     
   if(vg_init(mode) == NULL) {
     vg_exit();
-    printf("init sexo");
     return 1;
   }
 
   if(vg_draw_rectangle(x,y,width,height,color)) {
     vg_exit();
-    printf("rec sexo");
     return 1;
   }
 
   if(kbd_loop()) {
     vg_exit();
-    printf("kbd sexo");
     return 1;
   }
 
@@ -77,18 +74,58 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
 }
 
 int(video_test_pattern)(uint16_t mode, uint8_t no_rectangles, uint32_t first, uint8_t step) {
-  /* To be completed */
-  printf("%s(0x%03x, %u, 0x%08x, %d): under construction\n", __func__,
-         mode, no_rectangles, first, step);
+  if(vg_init(mode) == NULL) {
+    vg_exit();
+    return 1;
+  }
 
-  return 1;
+  int vertical = vmi.YResolution / no_rectangles;
+  int horizontal = vmi.XResolution / no_rectangles;
+
+  for (int i = 0 ; i < no_rectangles ; i++) {
+    for (int j = 0 ; j < no_rectangles ; j++) {
+
+      uint32_t color;
+
+      if(mode == 0x105) {
+        color = (first + (j * no_rectangles + i) * step) % (1 << vmi.BitsPerPixel);
+      } else {
+        uint32_t Red = (R(first) + j * step) % (1 << vmi.RedMaskSize);
+        uint32_t Green = (G(first) + i * step) % (1 << vmi.GreenMaskSize);
+        uint32_t Blue = (B(first) + (j + i) * step) % (1 << vmi.BlueMaskSize);
+        
+        color = (Red << vmi.RedFieldPosition) | (Green << vmi.GreenFieldPosition) | 
+        (Blue << vmi.BlueFieldPosition);
+      }
+
+      if(vg_draw_rectangle(j * horizontal, i * vertical, horizontal, vertical, color)) return 1;
+    }
+  }
+
+  if(kbd_loop()) {
+    return 1;
+  }
+
+  vg_exit();
+  return 0;
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-  /* To be completed */
-  printf("%s(%8p, %u, %u): under construction\n", __func__, xpm, x, y);
+  if(vg_init((uint16_t) 0x105) == NULL) {
+    vg_exit();
+    return 1;
+  }
 
-  return 1;
+  if(print_xpm(xpm, x, y) != 0) {
+    return 1;
+  }
+
+  if(kbd_loop()) {
+    return 1;
+  }
+
+  vg_exit();
+  return 0;
 }
 
 int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint16_t yf,

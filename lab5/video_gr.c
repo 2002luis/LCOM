@@ -10,7 +10,6 @@ void *(vg_init)(uint16_t mode) {
   reg86_t reg86;
 
   if(map_vram(mode)) {
-    printf("sexo...");
     return NULL;
   }
 
@@ -104,5 +103,32 @@ int (vg_draw_rectangle)(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
     }
   }
 
+  return 0;
+}
+
+uint32_t (R)(uint32_t first){
+  return ((1 << vmi.RedMaskSize) - 1) & (first >> vmi.RedFieldPosition);
+}
+
+uint32_t (G)(uint32_t first){
+  return ((1 << vmi.GreenMaskSize) - 1) & (first >> vmi.GreenFieldPosition);
+}
+
+uint32_t (B)(uint32_t first){
+  return ((1 << vmi.BlueMaskSize) - 1) & (first >> vmi.BlueFieldPosition);
+}
+
+int (print_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
+  xpm_image_t img;
+  uint8_t* colours = xpm_load(xpm, XPM_INDEXED, &img);
+  int i = 0;
+  for (int h = 0 ; h < img.height ; h++) {
+    for (int w = 0 ; w < img.width ; w++) {
+      if (vg_draw_pixel(x + w, y + h, colours[i]) != 0) {
+        return 1;
+      }
+      i++;
+    }
+  }
   return 0;
 }
