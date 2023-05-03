@@ -12,8 +12,10 @@
 
 extern int timer_hook_id;
 extern int kbd_hook_id;
-extern int timer_count;
+extern int timer_counter;
 extern uint8_t kbd_read;
+extern void *video_mem;
+extern vbe_mode_info_t vmi;
 
 int main(int argc, char *argv[]){
 
