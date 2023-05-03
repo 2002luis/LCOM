@@ -39,50 +39,53 @@ int main(int argc, char *argv[]){
 
 int (proj_main_loop)(){
 
-  int ipcstatus, driver;
-  uint8_t coco = 2;
-  uint32_t hookid = BIT(coco);
-  message msg;
-  uint8_t bytes[2] = {0};
-  bool make;
+  uint8_t bitno = 0;
+  uint8_t bytes[2] = {0,0};
+  if(kbd_subscribe(&bitno)) return 1;
 
   kbd_read = 0x00;
 
-  kbd_subscribe(&coco);
-  while(kbd_read != 0x81) {
+  int ipc_status, driver;
+  message msg;
 
-  if((driver = driver_receive(ANY,&msg,&ipcstatus))!=0) { //se houver algum erro a ler
+
+  while( kbd_read != 0x81 ) { /* You may want to use a different condition */
+    /* Get a request message. */
+    
+    if((driver = driver_receive(ANY,&msg,&ipc_status))!=0){ //se houver algum erro a ler
     printf("Erro a ler");
-  } else { //else
-    if(is_ipc_notify(ipcstatus)) { //se tiver recebido um interrupt da merda q quero
-      switch(_ENDPOINT_P(msg.m_source)) {
-        case HARDWARE: //SE FOR HARDWARE INTERRUPT
-        if(msg.m_notify.interrupts & hookid) { //SE TIVER VINDO DO SITIO QUE EU QUERO
-          kbc_ih();
-          if(kbd_read == 0xe0) {
-              bytes[0] = 0xe0;
+    }
+    else{ //else
+      if(is_ipc_notify(ipc_status)){ //se tiver recebido um interrupt da merda q quero
+        switch(_ENDPOINT_P(msg.m_source)){
+          case HARDWARE: //SE FOR HARDWARE INTERRUPT
+          if(msg.m_notify.interrupts & bitno){ //SE TIVER VINDO DO SITIO QUE EU QUERO
+            kbc_ih();
+            if(kbd_read == 0xe0){
+                bytes[0] = 0xe0;
 
-          } else {
-              make = !(kbd_read & BIT(7));
-              if(bytes[0] == 0xe0) {
-                  bytes[1] = kbd_read;
-                  //kbd_print_scancode(make, 2, bytes);
-              } else {
-                  bytes[0] = kbd_read;
-                  //kbd_print_scancode(make, 1, bytes);
-              }
-              bytes[0] = 0;
-              bytes[1] = 0;
+            }
+            else{
+                bool make = !(kbd_read & BIT(7));
+                if(bytes[0] == 0xe0){
+                    bytes[1] = kbd_read;
+                    kbd_print_scancode(make, 2, bytes);
+                }
+                else {
+                    bytes[0] = kbd_read;
+                    kbd_print_scancode(make, 1, bytes);
+                }
+                bytes[0] = 0;
+                bytes[1] = 0;
+            }
           }
+          break;
+          default:
+          break;
         }
-        break;
-        default:
-        break;
       }
     }
   }
-}
-
   //kbd_print_no_sysinb(sys_inb_count);
 
   return kbd_unsubscribe();
