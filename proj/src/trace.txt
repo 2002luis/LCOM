@@ -1,0 +1,14 @@
+@lcflib.a:2019, lcf_start
+  proj_main_loop(argc, argv)
+> proj_main_loop(0, [NULL])
+  @keyboard.c:29, kbd_subscribe
+    sys_irqsetpolicy(KBD_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &kbd_hook_id)
+  > sys_irqsetpolicy(1, 3, addr: 0x822d348 [3])
+  < sys_irqsetpolicy(1, 3, addr: 0x822d348 [10]) -> (ret: 0)
+  @main.c:52, proj_main_loop
+    driver_receive(ANY, &msg, &ipcstatus)
+  > driver_receive(ANY, addr: 0xeffff760, addr: 0xeffff7a8)
+  < driver_receive(<[HARDWARE: 0b0000000000000000000000000000000000000000000000000000000000001000]>)
+  @main.c:52, proj_main_loop
+    driver_receive(ANY, &msg, &ipcstatus)
+  > driver_receive(ANY, addr: 0xeffff760, addr: 0xeffff7a8)
