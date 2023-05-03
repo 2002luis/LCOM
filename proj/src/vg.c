@@ -124,7 +124,7 @@ int (print_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
   int i = 0;
   for (int h = 0 ; h < img.height ; h++) {
     for (int w = 0 ; w < img.width ; w++) {
-      if (vg_draw_pixel(x + w, y + h, colours[i]) != 0) {
+      if (colours[i]!=0 && vg_draw_pixel(x + w, y + h, colours[i]) != 0) {
         return 1;
       }
       i++;
