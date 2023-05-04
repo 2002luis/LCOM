@@ -18,6 +18,16 @@ extern uint8_t kbd_read;
 extern void *video_mem;
 extern vbe_mode_info_t vmi;
 
+struct player{
+  int X;
+  int Y;
+};
+
+struct obstacle{
+  int X;
+  int Y;
+};
+
 int main(int argc, char *argv[]){
 
   lcf_trace_calls("/home/lcom/labs/proj/src/trace.txt");
@@ -46,7 +56,15 @@ int (proj_main_loop)(){
     return 1;
   }
 
-  uint16_t gajoX = 100, gajoY = 100;
+  bool lost = false;
+
+  struct player p;
+  struct obstacle o1;
+  o1.X = 80;
+  o1.Y = 0;
+
+  p.X = 80;
+  p.Y = 600;
   uint8_t kbdbitno = 0, timerbitno;
   uint8_t bytes[2] = {0,0};
   if(kbd_subscribe(&kbdbitno)) return 1;
@@ -63,7 +81,7 @@ int (proj_main_loop)(){
   //if(print_xpm(gajoTeste, gajoX, gajoY) != 0) {
    // return 1;
   //}
-
+  print_xpm(penguin,p.X,p.Y);
 
   while( kbd_read != 0x81 ) { 
     
@@ -82,31 +100,44 @@ int (proj_main_loop)(){
             }
             else{
                 bool make = !(kbd_read & BIT(7));
+                if(!lost){
                 if(bytes[0] == 0xe0){
                     bytes[1] = kbd_read;
-                    if(bytes[1] == 0x4b){ //esquerda
-                      gajoX-=100;
+                    if(bytes[1] == 0x4b && p.X>100){ //esquerda
+                      vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                      p.X-=100;
+                      print_xpm(penguin,p.X,p.Y);
                     }
-                    else if(bytes[1] == 0x4d){ //direita
-                      gajoX+=100;
+                    else if(bytes[1] == 0x4d && p.X<880){ //direita
+                      vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                      p.X+=100;
+                      print_xpm(penguin,p.X,p.Y);
                     }
+                  }
+                  else {
+                      bytes[0] = kbd_read;
+                      kbd_print_scancode(make, 1, bytes);
+                  }
                 }
-                else {
-                    bytes[0] = kbd_read;
-                    kbd_print_scancode(make, 1, bytes);
+                else{
+
                 }
                 bytes[0] = 0;
                 bytes[1] = 0;
             }
-
-            
           }
           if(msg.m_notify.interrupts & timerbitno){
             timer_int_handler();
-            if(timer_counter>=30){ //numero arbitrario tbh
-              vg_draw_rectangle(0,0,vmi.XResolution,vmi.YResolution,0); //LIMPAR A TELA
-              print_xpm(penguin,gajoX,gajoY);
+            if(timer_counter>=30 && !lost){ //numero arbitrario tbh
               timer_counter = 0;
+              if((o1.Y+64)<vmi.YResolution) vg_draw_rectangle(o1.X,o1.Y,64,64,0);
+              o1.Y += 100;
+              if((o1.Y+64)<vmi.YResolution) print_xpm(pic3,o1.X,o1.Y);
+              if(o1.X == p.X && o1.Y == p.Y){
+                //PERDER O JOGO
+                lost = true;
+                vg_draw_rectangle(100,100,500,500,20);
+              }
             }
           }
           break;
