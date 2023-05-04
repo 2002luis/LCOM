@@ -75,7 +75,7 @@ int (proj_main_loop)(){
   int ipc_status, driver;
   message msg;
 
-
+  srand(time(NULL));
   
 
   //if(print_xpm(gajoTeste, gajoX, gajoY) != 0) {
@@ -128,11 +128,15 @@ int (proj_main_loop)(){
           }
           if(msg.m_notify.interrupts & timerbitno){
             timer_int_handler();
-            if(timer_counter>=30 && !lost){ //numero arbitrario tbh
+            if(timer_counter>=15 && !lost){ //numero arbitrario tbh
               timer_counter = 0;
               if((o1.Y+64)<vmi.YResolution) vg_draw_rectangle(o1.X,o1.Y,64,64,0);
-              o1.Y += 100;
+              o1.Y += 50;
               if((o1.Y+64)<vmi.YResolution) print_xpm(pic3,o1.X,o1.Y);
+              else{
+                o1.Y = 0;
+                o1.X = (rand()%9)*100+100;
+              }
               if(o1.X == p.X && o1.Y == p.Y){
                 //PERDER O JOGO
                 lost = true;
