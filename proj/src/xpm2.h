@@ -1,10 +1,10 @@
 #pragma once
 
 #include <stddef.h>
-#include "xpm.h"
+#include <lcom/lcf.h>
 
 static xpm_row_t const gajoTeste[] = {
-"100 100 2 1",
+"100 100 2",
 "  0",
 "! 8",
 "                                                                                                    ",

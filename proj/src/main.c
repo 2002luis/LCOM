@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "vg.h"
 #include "i8254.h"
-#include "xpm.h"
+#include "xpm2.h"
 
 #include <stdint.h>
 
@@ -21,11 +21,15 @@ extern vbe_mode_info_t vmi;
 struct player{
   int X;
   int Y;
+  int XLen, YLen;
+  xpm_row_t* img;
 };
 
 struct obstacle{
   int X;
   int Y;
+  int XLen, YLen;
+  xpm_row_t* img;
 };
 
 int main(int argc, char *argv[]){
@@ -48,6 +52,20 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
+int (max)(int a, int b){
+  if(a>b) return a;
+  return b;
+}
+
+int (min)(int a, int b){
+  if(a<b) return a;
+  return b;
+}
+
+bool (intersects)(struct player p, struct obstacle o){
+  if((p.X+p.XLen-20) < o.X || (p.Y+p.YLen-20) < o.Y || p.Y > (o.Y+o.YLen-20) || p.X > (o.X+o.XLen-20)) return false;
+  return true;
+}
 
 int (proj_main_loop)(){
 
@@ -60,11 +78,21 @@ int (proj_main_loop)(){
 
   struct player p;
   struct obstacle o1;
-  o1.X = 80;
-  o1.Y = 0;
 
-  p.X = 80;
+  o1.img = pic3;
+
+  o1.X = 100;
+  o1.Y = 0;
+  o1.XLen = 64;
+  o1.YLen = 32;
+
+
+  p.img = penguin;
+
+  p.X = 100;
   p.Y = 600;
+  p.XLen = 64;
+  p.YLen = 64;
   uint8_t kbdbitno = 0, timerbitno;
   uint8_t bytes[2] = {0,0};
   if(kbd_subscribe(&kbdbitno)) return 1;
@@ -81,8 +109,8 @@ int (proj_main_loop)(){
   //if(print_xpm(gajoTeste, gajoX, gajoY) != 0) {
    // return 1;
   //}
+  bool left = false, right = false, up = false, down = false;
   print_xpm(penguin,p.X,p.Y);
-
   while( kbd_read != 0x81 ) { 
     
     if((driver = driver_receive(ANY,&msg,&ipc_status))!=0){ //se houver algum erro a ler
@@ -103,16 +131,17 @@ int (proj_main_loop)(){
                 if(!lost){
                 if(bytes[0] == 0xe0){
                     bytes[1] = kbd_read;
-                    if(bytes[1] == 0x4b && p.X>100){ //esquerda
-                      vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                      p.X-=100;
-                      print_xpm(penguin,p.X,p.Y);
-                    }
-                    else if(bytes[1] == 0x4d && p.X<880){ //direita
-                      vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                      p.X+=100;
-                      print_xpm(penguin,p.X,p.Y);
-                    }
+
+                    if(bytes[1] == 0x4b) left = true;
+                    else if(bytes[1] == 0xcb) left = false;
+                    else if(bytes[1] == 0x4d) right = true;
+                    else if(bytes[1] == 0xcd) right = false;
+                    else if(bytes[1] == 0x48) up = true;
+                    else if(bytes[1] == 0xc8) up = false;
+                    else if(bytes[1] == 0x50) down = true;
+                    else if(bytes[1] == 0xd0) down = false;
+
+                    
                   }
                   else {
                       bytes[0] = kbd_read;
@@ -128,16 +157,41 @@ int (proj_main_loop)(){
           }
           if(msg.m_notify.interrupts & timerbitno){
             timer_int_handler();
-            if(timer_counter>=15 && !lost){ //numero arbitrario tbh
+            if(timer_counter>=5 && !lost){ //numero arbitrario tbh
+
+              if(left && !right && p.X>100){ //esquerda
+                vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                p.X-=20;
+                print_xpm(p.img,p.X,p.Y);
+              }
+              else if(right && !left && p.X<890){ //direita
+                vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                p.X+=20;
+                print_xpm(p.img,p.X,p.Y);
+              }
+              else if(up && !down && p.Y > 200){ //cima
+                vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                p.Y-=20;
+                print_xpm(p.img,p.X,p.Y);
+              }
+              else if(down && !up && p.Y < 600){ //cima
+                vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                p.Y+=20;
+                print_xpm(p.img,p.X,p.Y);
+              }
+
+
               timer_counter = 0;
               if((o1.Y+64)<vmi.YResolution) vg_draw_rectangle(o1.X,o1.Y,64,64,0);
-              o1.Y += 50;
+              o1.Y += 20;
               if((o1.Y+64)<vmi.YResolution) print_xpm(pic3,o1.X,o1.Y);
               else{
                 o1.Y = 0;
-                o1.X = (rand()%9)*100+100;
+                o1.X = max((rand()%800)+100,(900-o1.XLen));
               }
-              if(o1.X == p.X && o1.Y == p.Y){
+              if(intersects(p,o1)){
+                print_xpm(p.img,p.X,p.Y);
+                print_xpm(pic3,o1.X,o1.Y);
                 //PERDER O JOGO
                 lost = true;
                 vg_draw_rectangle(100,100,500,500,20);
