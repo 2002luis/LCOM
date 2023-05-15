@@ -4,6 +4,7 @@
 #include "keyboard.h"
 
 static void *video_mem;
+uint8_t* buffer;
 vbe_mode_info_t vmi;
 
 void *(vg_init)(uint16_t mode) {
@@ -19,7 +20,7 @@ void *(vg_init)(uint16_t mode) {
   reg86.bx = (1 << 14) | mode;
   reg86.intno = 0x10;
 
-  if(sys_int86(&reg86) != OK) {
+  if(sys_int86(&reg86) != 0) {
     printf("\tvg_init(): sys_int86() failed \n");
     return NULL;
   }
@@ -42,7 +43,7 @@ int (map_vram)(uint16_t mode) {
   /* Use VBE function 0x01 to initialize vram_base and vram_size */
 
   memset(&vmi, 0, sizeof(vmi));
-  if(vbe_get_mode_info(mode, &vmi)!=OK) {
+  if(vbe_get_mode_info(mode, &vmi)!=0) {
     return 1;
   }
 
@@ -55,7 +56,7 @@ int (map_vram)(uint16_t mode) {
   mr.mr_base = (phys_bytes) vram_base;
   mr.mr_limit = mr.mr_base + vram_size;
 
-  if( OK != (r = sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr))){
+  if( 0 != (r = sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr))){
     panic("sys_privctl (ADD_MEM) failed: %d\n", r);
     return 1;
   }
@@ -75,7 +76,7 @@ int (map_vram)(uint16_t mode) {
 int(vg_draw_pixel)(uint16_t x, uint16_t y, uint32_t color) {
 
   uint8_t bytes = (vmi.BitsPerPixel + 7) / 8;
-  uint8_t* base = (uint8_t*) video_mem + (y * vmi. XResolution + x) * bytes;
+  uint8_t* base = buffer + (y * vmi. XResolution + x) * bytes;
 
   for(uint8_t i = 0; i < bytes; i++){
     *base = color >> (i * 8);
@@ -132,3 +133,21 @@ int (print_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
   }
   return 0;
 }
+
+void (allocateBuffer)(){
+  buffer = (uint8_t *)malloc(vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
+}
+
+void (showBuffer)(){
+  memcpy((uint8_t*)video_mem, buffer, vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
+}
+
+void (clearBuffer)(){
+  memset(buffer, 0, vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
+}
+
+void (freeBuffer)(){
+    free(buffer); 
+}
+
+

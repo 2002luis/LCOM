@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "lcf.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "keyboard.h": "c",
+        "utils.h": "c"
     }
 }
