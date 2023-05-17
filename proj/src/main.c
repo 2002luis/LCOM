@@ -154,7 +154,7 @@ int (proj_main_loop)(){
     printf("Erro a ler");
     }
     else{ //else
-      if(is_ipc_notify(ipc_status)){ //se tiver recebido um interrupt da merda q quero
+      if(is_ipc_notify(ipc_status)){ //se tiver recebido um interrupt da coisa q quero
         switch(_ENDPOINT_P(msg.m_source)){
           case HARDWARE: //SE FOR HARDWARE INTERRUPT
           if(msg.m_notify.interrupts & kbdbitno){ //SE TIVER VINDO DO SITIO QUE EU QUERO
