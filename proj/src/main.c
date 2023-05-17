@@ -98,7 +98,7 @@ int (proj_main_loop)(){
   struct pointer p2;
 
   p2.X = 500;
-  p2.Y = 50;
+  p2.Y = 150;
 
   bool day = true;
   uint8_t hour = 0;
@@ -146,7 +146,7 @@ int (proj_main_loop)(){
   //if(print_xpm(gajoTeste, gajoX, gajoY) != 0) {
    // return 1;
   //}
-  bool left = false, right = false, up = false, down = false;
+  bool left = false, right = false, tempDisableLeftKbd = false, tempDisableRightKbd = false;
   print_xpm(penguin,p.X,p.Y);
   while( !endgame ) { 
     
@@ -174,13 +174,21 @@ int (proj_main_loop)(){
                     bytes[1] = kbd_read;
 
                     if(bytes[1] == 0x4b) left = true;
-                    else if(bytes[1] == 0xcb) left = false;
+                    else if(bytes[1] == 0xcb) 
+                    {
+                      tempDisableLeftKbd = false;
+                      left = false;
+                    }
                     else if(bytes[1] == 0x4d) right = true;
-                    else if(bytes[1] == 0xcd) right = false;
-                    else if(bytes[1] == 0x48) up = true;
+                    else if(bytes[1] == 0xcd) 
+                    {
+                      tempDisableRightKbd = false;
+                      right = false;
+                    }
+                    /*else if(bytes[1] == 0x48) up = true;
                     else if(bytes[1] == 0xc8) up = false;
                     else if(bytes[1] == 0x50) down = true;
-                    else if(bytes[1] == 0xd0) down = false;
+                    else if(bytes[1] == 0xd0) down = false;*/   
 
                     
                   }
@@ -207,36 +215,28 @@ int (proj_main_loop)(){
               clearBuffer();
               while(rtcReadHours(&hour));
               day = (hour>=7 && hour<=18);
+
               if(day) print_xpm(sun,50,50);
               else print_xpm(moon,50,50);
-              if(left && !right && p.X>100){ //esquerda
+              if(left && !right && p.X>100 && !tempDisableLeftKbd){ //esquerda
                 //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.X-=20;
+                p.X-=200;
+                tempDisableLeftKbd = true;
                 //print_xpm(p.img,p.X,p.Y);
               }
-              else if(right && !left && p.X<890){ //direita
+              else if(right && !left && p.X<890 && !tempDisableRightKbd){ //direita
                 //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.X+=20;
+                p.X+=200;
+                tempDisableRightKbd = true;
                 //print_xpm(p.img,p.X,p.Y);
               }
-              else if(up && !down && p.Y > 200){ //cima
-                //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.Y-=20;
-                //print_xpm(p.img,p.X,p.Y);
-              }
-              else if(down && !up && p.Y < 600){ //cima
-                //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.Y+=20;
-                //print_xpm(p.img,p.X,p.Y);
-              }
-
 
               timer_counter = 0;
               //if((o[0].Y+64)<vmi.YResolution) vg_draw_rectangle(o[0].X,o[0].Y,64,64,0);
-              for(int i = 0; i < nObs; i++){
+              if (!lost) for(int i = 0; i < nObs; i++){
                 if(o[i].active){
                   o[i].Y += o[i].speed*speedMul;
-                  if((o[i].Y+64)>vmi.YResolution) o[i].active = false;
+                  if((o[i].Y+o[i].YLen)>vmi.YResolution) o[i].active = false;
                   if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
                   if(intersects(p,o[i])){
                     //print_xpm(p.img,p.X,p.Y);
@@ -259,17 +259,17 @@ int (proj_main_loop)(){
               //vg_draw_rectangle(p2.X,p2.Y,20,20,0);
               toPacket();
               p2.X+=(pckt.delta_x)/1;
-              p2.Y-=(pckt.delta_y)/50;
+              //p2.Y-=(pckt.delta_y)/50;
               p2.X = clamp(p2.X,120,880);
-              p2.Y = clamp(p2.Y, 10, 300);
+              //p2.Y = clamp(p2.Y, 10, 300);
               //vg_draw_rectangle(p2.X,p2.Y,20,20,5);
               if(pckt.lb && !tempIgnoreLeftMouse){
                 for(int i = 0; i < nObs; i++)
                 if(!o[i].active){
-                  o[i].X = p2.X;
+                  o[i].X = (p2.X/200)*200+100;
                   o[i].Y = p2.Y;
                   o[i].XLen = 64;
-                  o[i].YLen = 64;
+                  o[i].YLen = 32;
                   o[i].active = true;
                   o[i].img = pic3;
                   o[i].speed = 20;
@@ -279,7 +279,7 @@ int (proj_main_loop)(){
               }
               else if(pckt.rb && !tempIgnoreRightMouse){
                 for(int i = 0; i < nObs; i++) if(!o[i].active){
-                  o[i].X = p2.X;
+                  o[i].X = (p2.X/200)*200+100;
                   o[i].Y = p2.Y;
                   o[i].XLen = 100;
                   o[i].YLen = 100;
