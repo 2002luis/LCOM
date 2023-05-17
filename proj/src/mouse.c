@@ -48,7 +48,7 @@ void (toPacket)(){
   
   pckt.delta_x = bytes[1];
   if(bytes[0] & BIT(4)) pckt.delta_x |= 0xFF00;
-  pckt.delta_y = bytes[1];
+  pckt.delta_y = bytes[2];
   if(bytes[0] & BIT(5)) pckt.delta_y |= 0xFF00;
 
   pckt.x_ov = bytes[0] & BIT(6);
