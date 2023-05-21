@@ -1,5 +1,6 @@
 #pragma once
- 
+
+#include <lcom/lcf.h>
 #include <stdint.h>
  
 void *(vg_init)(uint16_t mode);
@@ -23,7 +24,6 @@ uint32_t (G)(uint32_t first);
 uint32_t (B)(uint32_t first);
 
 int (print_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y);
-
 
 void (allocateBuffer)();
 

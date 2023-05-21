@@ -1,7 +1,6 @@
 #include <lcom/lcf.h>
 
 #include "vg.h"
-#include "keyboard.h"
 
 static void *video_mem;
 uint8_t* buffer;
@@ -78,6 +77,7 @@ int(vg_draw_pixel)(uint16_t x, uint16_t y, uint32_t color) {
   uint8_t bytes = (vmi.BitsPerPixel + 7) / 8;
   uint8_t* base = buffer + (y * vmi. XResolution + x) * bytes;
 
+  if(x >= vmi.XResolution || y >= vmi.YResolution) return 0;
   for(uint8_t i = 0; i < bytes; i++){
     *base = color >> (i * 8);
     base++;
@@ -147,7 +147,7 @@ void (clearBuffer)(){
 }
 
 void (freeBuffer)(){
-    free(buffer); 
+  free(buffer); 
 }
 
 

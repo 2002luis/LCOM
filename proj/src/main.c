@@ -44,7 +44,7 @@ struct obstacle{
   bool active;
 };
 
-int timeUntilSpeedUp = 50, maxTime = 50;
+int maxTime = 50;
 float speedMul = 1;
 char clockStr[50];
 
@@ -68,19 +68,33 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
+void(drawNumber)(int num, int x, int y){
+  if(num == 0) print_xpm(tempNum0,x,y);
+  else if(num == 1) print_xpm(tempNum1,x,y);
+  else if(num == 2) print_xpm(tempNum2,x,y);
+  else if(num == 3) print_xpm(tempNum3,x,y);
+  else if(num == 4) print_xpm(tempNum4,x,y);
+  else if(num == 5) print_xpm(tempNum5,x,y);
+  else if(num == 6) print_xpm(tempNum6,x,y);
+  else if(num == 7) print_xpm(tempNum7,x,y);
+  else if(num == 8) print_xpm(tempNum8,x,y);
+  else if(num == 9) print_xpm(tempNum9,x,y);
+}
+
 void (drawClock)(){
   for(int i = 0; i < 9; i++){
     if(clockStr[i]==':') print_xpm(tempSymbolColon,0+(i*64),700);
-    else if(clockStr[i]=='0') print_xpm(tempNum0,0+(i*64),700);
-    else if(clockStr[i]=='1') print_xpm(tempNum1,0+(i*64),700);
-    else if(clockStr[i]=='2') print_xpm(tempNum2,0+(i*64),700);
-    else if(clockStr[i]=='3') print_xpm(tempNum3,0+(i*64),700);
-    else if(clockStr[i]=='4') print_xpm(tempNum4,0+(i*64),700);
-    else if(clockStr[i]=='5') print_xpm(tempNum5,0+(i*64),700);
-    else if(clockStr[i]=='6') print_xpm(tempNum6,0+(i*64),700);
-    else if(clockStr[i]=='7') print_xpm(tempNum7,0+(i*64),700);
-    else if(clockStr[i]=='8') print_xpm(tempNum8,0+(i*64),700);
-    else if(clockStr[i]=='9') print_xpm(tempNum9,0+(i*64),700);
+    else drawNumber(clockStr[i]-'0',0+(i*64),700);
+  }
+}
+
+void (drawPoints)(int points){
+  char pointsStr[8] = "000000";
+  sprintf(pointsStr,"%06d",points);
+  int i = 0;
+  while(pointsStr[i] != '\0'){
+    drawNumber(pointsStr[i]-'0',640+(i*64),0);
+    i++;
   }
 }
 
@@ -115,14 +129,17 @@ int (proj_main_loop)(){
   struct pointer p2;
 
   p2.X = 500;
-  p2.Y = 50;
+  p2.Y = 100;
+
+  memset(&pckt,0,sizeof(pckt));
 
   bool day = true;
   uint8_t hour = 0, minute = 0, second = 0;
   while(rtcReadHours(&hour));
   while(rtcReadMinutes(&minute));
   while(rtcReadSeconds(&second));
-  day = (hour>=7 && hour<=19);
+  day = (hour>=6 && hour<=19);
+  int score = 0;
 
   bool lost = false;
   bool tempIgnoreLeftMouse = false, tempIgnoreRightMouse = false;
@@ -130,15 +147,6 @@ int (proj_main_loop)(){
   struct player p;
   struct obstacle o[5];
   int nObs = 5;
-
-  o[0].img = pic3;
-
-  o[0].X = 100;
-  o[0].Y = 0;
-  o[0].XLen = 64;
-  o[0].YLen = 32;
-  o[0].active = true;
-  o[0].speed = 20;
 
   for(int i = 0; i < nObs; i++) o[i].active = false;
 
@@ -218,10 +226,9 @@ int (proj_main_loop)(){
           if(msg.m_notify.interrupts & timerbitno){
             timer_int_handler();
             if(timer_counter>=5 && !lost){ //numero arbitrario tbh
-              timeUntilSpeedUp--;
-              if(timeUntilSpeedUp == 0){
+              score++;
+              if(score % maxTime == 0){
                 speedMul += 0.1;
-                timeUntilSpeedUp = maxTime;
               }
               clearBuffer();
               while(rtcReadHours(&hour));
@@ -231,7 +238,6 @@ int (proj_main_loop)(){
               day = (hour>=6 && hour<=19);
               if(day) print_xpm(sun,50,50);
               else print_xpm(moon,50,50);
-              drawClock();
               if(left && !right && p.X>100){ //esquerda
                 //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
                 p.X-=20;
@@ -259,7 +265,7 @@ int (proj_main_loop)(){
               for(int i = 0; i < nObs; i++){
                 if(o[i].active){
                   o[i].Y += o[i].speed*speedMul;
-                  if((o[i].Y+64)>vmi.YResolution) o[i].active = false;
+                  if((o[i].Y)>=vmi.YResolution) o[i].active = false;
                   if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
                   if(intersects(p,o[i])){
                     //print_xpm(p.img,p.X,p.Y);
@@ -272,6 +278,8 @@ int (proj_main_loop)(){
               if(lost) vg_draw_rectangle(100,100,500,500,20);
               vg_draw_rectangle(p2.X,p2.Y,20,20,5);
               print_xpm(p.img,p.X,p.Y);
+              drawPoints(score);
+              drawClock();
               showBuffer();
             }
           }
@@ -284,11 +292,27 @@ int (proj_main_loop)(){
               p2.X+=(pckt.delta_x)/1;
               p2.Y-=(pckt.delta_y)/1;
               p2.X = clamp(p2.X,120,880);
-              p2.Y = clamp(p2.Y, 10, 300);
+              p2.Y = clamp(p2.Y, 75, 300);
               //vg_draw_rectangle(p2.X,p2.Y,20,20,5);
               if(pckt.lb && !tempIgnoreLeftMouse){
-                for(int i = 0; i < nObs; i++)
-                if(!o[i].active){
+                int n = 0;
+                for(int i = 0; i < nObs; i++){
+                  if(!o[i].active && n < 3){
+                    o[i].X = p2.X;
+                    o[i].Y = p2.Y;
+                    o[i].XLen = 200;
+                    o[i].YLen = 100;
+                    o[i].active = true;
+                    o[i].img = obstacleWide;
+                    o[i].speed = 5;
+                    tempIgnoreLeftMouse = true;
+                    break;
+                  }
+                  else if(o[i].XLen == 200) n++; //para nao deixar ter 3 compridos ao mesmo tempo (senao nao da para evitar)
+                }
+              }
+              else if(pckt.rb && !tempIgnoreRightMouse){
+                for(int i = 0; i < nObs; i++)  if(!o[i].active){
                   o[i].X = p2.X;
                   o[i].Y = p2.Y;
                   o[i].XLen = 100;
@@ -296,19 +320,6 @@ int (proj_main_loop)(){
                   o[i].active = true;
                   o[i].img = ComboioCP;
                   o[i].speed = 20;
-                  tempIgnoreLeftMouse = true;
-                  break;
-                }
-              }
-              else if(pckt.rb && !tempIgnoreRightMouse){
-                for(int i = 0; i < nObs; i++) if(!o[i].active){
-                  o[i].X = p2.X;
-                  o[i].Y = p2.Y;
-                  o[i].XLen = 64;
-                  o[i].YLen = 32;
-                  o[i].active = true;
-                  o[i].img = pic3;
-                  o[i].speed = 15;
                   tempIgnoreRightMouse = true;
                   break;
                 }
