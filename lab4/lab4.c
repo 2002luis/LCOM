@@ -43,7 +43,7 @@ int (mouse_test_packet)(uint32_t cnt) {
   message msg;
   uint8_t mousebitno;
 
-  if (mouse_subscribe_int(&mousebitno) != 0) return 1;
+  if (mouse_subscribe(&mousebitno) != 0) return 1;
 
   if (mouse_write(0xf4) != 0) return 1;
 
@@ -59,9 +59,9 @@ int (mouse_test_packet)(uint32_t cnt) {
         case HARDWARE:
           if (msg.m_notify.interrupts & mousebitno){
             mouse_ih();
-            mouse_sync_bytes();
+            readBytes();
             if (bIndex == 3) {
-              mouse_bytes_to_packet();
+              toPacket();
               mouse_print_packet(&pckt);
               bIndex = 0;
               cnt--;
@@ -74,7 +74,7 @@ int (mouse_test_packet)(uint32_t cnt) {
   
   if (mouse_write(0xf5) != 0) return 1;
 
-  if (mouse_unsubscribe_int() != 0) return 1;
+  if (mouse_unsubscribe() != 0) return 1;
  
   return 0;
 }
