@@ -19,7 +19,38 @@ bool (rtcBinary)(){
 	return out & BIT(2);
 }
 
+uint8_t (toBinary)(uint8_t n) {
+    return ((n >> 4) * 10) + (n & 0xF);
+}
+
 int (rtcReadHours)(uint8_t* out){
     if (rtcUpdating()) return 1;
-    return(readRtc(4, out));
+    if(readRtc(4, out)) return 1;
+    if(rtcBinary()) return 0;
+    else{
+        *out = toBinary(*out);
+    }
+    return 0;
+}
+
+
+int (rtcReadMinutes)(uint8_t* out){
+    if (rtcUpdating()) return 1;
+    if(readRtc(2, out)) return 1;
+    if(rtcBinary()) return 0;
+    else{
+        *out = toBinary(*out);
+    }
+    return 0;
+}
+
+
+int (rtcReadSeconds)(uint8_t* out){
+    if (rtcUpdating()) return 1;
+    if(readRtc(0, out)) return 1;
+    if(rtcBinary()) return 0;
+    else{
+        *out = toBinary(*out);
+    }
+    return 0;
 }

@@ -11,4 +11,10 @@ bool (rtcUpdating)();
 
 bool (rtcBinary)();
 
+uint8_t (toBinary)(uint8_t n);
+
 int (rtcReadHours)(uint8_t* out);
+
+int (rtcReadMinutes)(uint8_t* out);
+
+int (rtcReadSeconds)(uint8_t* out);

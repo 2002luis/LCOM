@@ -46,6 +46,7 @@ struct obstacle{
 
 int timeUntilSpeedUp = 50, maxTime = 50;
 float speedMul = 1;
+char clockStr[50];
 
 int main(int argc, char *argv[]){
 
@@ -65,6 +66,22 @@ int main(int argc, char *argv[]){
   lcf_cleanup();
 
     return 0;
+}
+
+void (drawClock)(){
+  for(int i = 0; i < 9; i++){
+    if(clockStr[i]==':') print_xpm(tempSymbolColon,0+(i*64),700);
+    else if(clockStr[i]=='0') print_xpm(tempNum0,0+(i*64),700);
+    else if(clockStr[i]=='1') print_xpm(tempNum1,0+(i*64),700);
+    else if(clockStr[i]=='2') print_xpm(tempNum2,0+(i*64),700);
+    else if(clockStr[i]=='3') print_xpm(tempNum3,0+(i*64),700);
+    else if(clockStr[i]=='4') print_xpm(tempNum4,0+(i*64),700);
+    else if(clockStr[i]=='5') print_xpm(tempNum5,0+(i*64),700);
+    else if(clockStr[i]=='6') print_xpm(tempNum6,0+(i*64),700);
+    else if(clockStr[i]=='7') print_xpm(tempNum7,0+(i*64),700);
+    else if(clockStr[i]=='8') print_xpm(tempNum8,0+(i*64),700);
+    else if(clockStr[i]=='9') print_xpm(tempNum9,0+(i*64),700);
+  }
 }
 
 int (max)(int a, int b){
@@ -101,9 +118,11 @@ int (proj_main_loop)(){
   p2.Y = 50;
 
   bool day = true;
-  uint8_t hour = 0;
+  uint8_t hour = 0, minute = 0, second = 0;
   while(rtcReadHours(&hour));
-  day = (hour>=7 && hour<=18);
+  while(rtcReadMinutes(&minute));
+  while(rtcReadSeconds(&second));
+  day = (hour>=7 && hour<=19);
 
   bool lost = false;
   bool tempIgnoreLeftMouse = false, tempIgnoreRightMouse = false;
@@ -206,9 +225,13 @@ int (proj_main_loop)(){
               }
               clearBuffer();
               while(rtcReadHours(&hour));
+              while(rtcReadMinutes(&minute));
+              while(rtcReadSeconds(&second));
+              sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
               day = (hour>=6 && hour<=19);
               if(day) print_xpm(sun,50,50);
               else print_xpm(moon,50,50);
+              drawClock();
               if(left && !right && p.X>100){ //esquerda
                 //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
                 p.X-=20;
@@ -268,10 +291,10 @@ int (proj_main_loop)(){
                 if(!o[i].active){
                   o[i].X = p2.X;
                   o[i].Y = p2.Y;
-                  o[i].XLen = 64;
-                  o[i].YLen = 64;
+                  o[i].XLen = 100;
+                  o[i].YLen = 200;
                   o[i].active = true;
-                  o[i].img = pic3;
+                  o[i].img = ComboioCP;
                   o[i].speed = 20;
                   tempIgnoreLeftMouse = true;
                   break;
@@ -281,10 +304,10 @@ int (proj_main_loop)(){
                 for(int i = 0; i < nObs; i++) if(!o[i].active){
                   o[i].X = p2.X;
                   o[i].Y = p2.Y;
-                  o[i].XLen = 100;
-                  o[i].YLen = 100;
+                  o[i].XLen = 64;
+                  o[i].YLen = 32;
                   o[i].active = true;
-                  o[i].img = train;
+                  o[i].img = pic3;
                   o[i].speed = 15;
                   tempIgnoreRightMouse = true;
                   break;
