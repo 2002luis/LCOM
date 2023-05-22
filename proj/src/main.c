@@ -69,31 +69,31 @@ int main(int argc, char *argv[]){
 }
 
 void(drawNumber)(int num, int x, int y){
-  if(num == 0) print_xpm(tempNum0,x,y);
-  else if(num == 1) print_xpm(tempNum1,x,y);
-  else if(num == 2) print_xpm(tempNum2,x,y);
-  else if(num == 3) print_xpm(tempNum3,x,y);
-  else if(num == 4) print_xpm(tempNum4,x,y);
-  else if(num == 5) print_xpm(tempNum5,x,y);
-  else if(num == 6) print_xpm(tempNum6,x,y);
-  else if(num == 7) print_xpm(tempNum7,x,y);
-  else if(num == 8) print_xpm(tempNum8,x,y);
-  else if(num == 9) print_xpm(tempNum9,x,y);
+  if(num == 0) print_xpm(num0,x,y);
+  else if(num == 1) print_xpm(num1,x,y);
+  else if(num == 2) print_xpm(num2,x,y);
+  else if(num == 3) print_xpm(num3,x,y);
+  else if(num == 4) print_xpm(num4,x,y);
+  else if(num == 5) print_xpm(num5,x,y);
+  else if(num == 6) print_xpm(num6,x,y);
+  else if(num == 7) print_xpm(num7,x,y);
+  else if(num == 8) print_xpm(num8,x,y);
+  else if(num == 9) print_xpm(num9,x,y);
 }
 
 void (drawClock)(){
   for(int i = 0; i < 9; i++){
-    if(clockStr[i]==':') print_xpm(tempSymbolColon,0+(i*64),700);
-    else drawNumber(clockStr[i]-'0',0+(i*64),700);
+    if(clockStr[i]==':') print_xpm(symbolColon,10+(i*32),730);
+    else drawNumber(clockStr[i]-'0',10+(i*32),730);
   }
 }
 
-void (drawPoints)(int points){
+void (drawPoints)(int x, int y,int points){
   char pointsStr[8] = "000000";
   sprintf(pointsStr,"%06d",points);
   int i = 0;
   while(pointsStr[i] != '\0'){
-    drawNumber(pointsStr[i]-'0',640+(i*64),0);
+    drawNumber(pointsStr[i]-'0',x+(i*32),y);
     i++;
   }
 }
@@ -115,7 +115,7 @@ int (clamp)(int a, int mn, int mx){
 }
 
 bool (intersects)(struct player p, struct obstacle o){
-  if((p.X+p.XLen-20) < o.X || (p.Y+p.YLen-20) < o.Y || p.Y > (o.Y+o.YLen-20) || p.X > (o.X+o.XLen-20)) return false;
+  if((p.X+p.XLen-10) < o.X || (p.Y+p.YLen-10) < o.Y || p.Y > (o.Y+o.YLen-10) || p.X > (o.X+o.XLen-10)) return false;
   return true;
 }
 
@@ -131,6 +131,8 @@ int (proj_main_loop)(){
   p2.X = 500;
   p2.Y = 100;
 
+  int ignoreFirstMousePackets = 5; // sem isto dá problemas
+
   memset(&pckt,0,sizeof(pckt));
 
   bool day = true;
@@ -139,10 +141,10 @@ int (proj_main_loop)(){
   while(rtcReadMinutes(&minute));
   while(rtcReadSeconds(&second));
   day = (hour>=6 && hour<=19);
-  int score = 0;
+  int score = 0, maxScore = 0;
 
   bool lost = false;
-  bool tempIgnoreLeftMouse = false, tempIgnoreRightMouse = false;
+  bool tempIgnoreLeftMouse = false, tempIgnoreRightMouse = false, tempIgnoreMiddleMouse = false;
 
   struct player p;
   struct obstacle o[5];
@@ -186,13 +188,22 @@ int (proj_main_loop)(){
           case HARDWARE: //SE FOR HARDWARE INTERRUPT
           if(msg.m_notify.interrupts & kbdbitno){ //SE TIVER VINDO DO SITIO QUE EU QUERO
             kbc_ih();
-            if(kbd_read == 0x81){
+            if(kbd_read == 0x81){ //ESC
               mouse_write(0xf5);
               endgame = true;
             }
             else if(kbd_read == 0xe0){
                 bytes[0] = 0xe0;
-
+            }
+            else if(kbd_read == 0x13 && lost){ //R
+              score = 0;
+              for(int i = 0; i < nObs; i++) o[i].active = false;
+              p2.X = 500;
+              p2.Y = 100;
+              p.X = 100;
+              p.Y = 600;
+              speedMul = 1;
+              lost = false;
             }
             else{
                 //bool make = !(kbd_read & BIT(7));
@@ -225,68 +236,93 @@ int (proj_main_loop)(){
           }
           if(msg.m_notify.interrupts & timerbitno){
             timer_int_handler();
-            if(timer_counter>=5 && !lost){ //numero arbitrario tbh
-              score++;
-              if(score % maxTime == 0){
-                speedMul += 0.1;
-              }
-              clearBuffer();
-              while(rtcReadHours(&hour));
-              while(rtcReadMinutes(&minute));
-              while(rtcReadSeconds(&second));
-              sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
-              day = (hour>=6 && hour<=19);
-              if(day) print_xpm(sun,50,50);
-              else print_xpm(moon,50,50);
-              if(left && !right && p.X>100){ //esquerda
-                //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.X-=20;
-                //print_xpm(p.img,p.X,p.Y);
-              }
-              else if(right && !left && p.X<890){ //direita
-                //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.X+=20;
-                //print_xpm(p.img,p.X,p.Y);
-              }
-              else if(up && !down && p.Y > 200){ //cima
-                //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.Y-=20;
-                //print_xpm(p.img,p.X,p.Y);
-              }
-              else if(down && !up && p.Y < 600){ //cima
-                //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
-                p.Y+=20;
-                //print_xpm(p.img,p.X,p.Y);
-              }
+            clearBuffer();
+            while(rtcReadHours(&hour));
+            while(rtcReadMinutes(&minute));
+            while(rtcReadSeconds(&second));
+            sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
+            day = (hour>=6 && hour<=19);
+            if(day) print_xpm(sun,50,50);
+            else print_xpm(moon,50,50);
+            if(timer_counter>=5){
+                if(!lost){ //numero arbitrario tbh
+                score++;
+                if(score % maxTime == 0){
+                  speedMul += 0.1;
+                }
+                
+                
+                if(left && !right && p.X>100){ //esquerda
+                  //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                  p.X-=20;
+                  //print_xpm(p.img,p.X,p.Y);
+                }
+                else if(right && !left && p.X<890){ //direita
+                  //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                  p.X+=20;
+                  //print_xpm(p.img,p.X,p.Y);
+                }
+                else if(up && !down && p.Y > 200){ //cima
+                  //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                  p.Y-=20;
+                  //print_xpm(p.img,p.X,p.Y);
+                }
+                else if(down && !up && p.Y < 600){ //cima
+                  //vg_draw_rectangle(p.X,p.Y,64,64,0); //LIMPAR A TELA
+                  p.Y+=20;
+                  //print_xpm(p.img,p.X,p.Y);
+                }
 
 
-              timer_counter = 0;
-              //if((o[0].Y+64)<vmi.YResolution) vg_draw_rectangle(o[0].X,o[0].Y,64,64,0);
-              for(int i = 0; i < nObs; i++){
-                if(o[i].active){
-                  o[i].Y += o[i].speed*speedMul;
-                  if((o[i].Y)>=vmi.YResolution) o[i].active = false;
-                  if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
-                  if(intersects(p,o[i])){
-                    //print_xpm(p.img,p.X,p.Y);
-                    //print_xpm(pic3,o[0].X,o[0].Y);
-                    //PERDER O JOGO
-                    lost = true;
+                timer_counter = 0;
+                //if((o[0].Y+64)<vmi.YResolution) vg_draw_rectangle(o[0].X,o[0].Y,64,64,0);
+                for(int i = 0; i < nObs; i++){
+                  if(o[i].active){
+                    o[i].Y += o[i].speed*speedMul;
+                    if((o[i].Y)>=vmi.YResolution) o[i].active = false;
+                    if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
+                    if(intersects(p,o[i])){
+                      //print_xpm(p.img,p.X,p.Y);
+                      //print_xpm(pic3,o[0].X,o[0].Y);
+                      //PERDER O JOGO
+                      lost = true;
+                      left = false;
+                      right = false;
+                      up = false;
+                      down = false;
+                      tempIgnoreLeftMouse = false;
+                      tempIgnoreRightMouse = false;
+                      tempIgnoreMiddleMouse = false;
+                      if(score > maxScore) maxScore = score;
+                    }
                   }
                 }
+                if(lost) vg_draw_rectangle(100,100,500,500,20);
+                print_xpm(p.img,p.X,p.Y);
+                vg_draw_rectangle(p2.X,p2.Y,20,20,5);
+                drawPoints(600,0,maxScore);
+                drawPoints(835,0,score);
+                drawClock();
+                showBuffer();
               }
-              if(lost) vg_draw_rectangle(100,100,500,500,20);
-              vg_draw_rectangle(p2.X,p2.Y,20,20,5);
-              print_xpm(p.img,p.X,p.Y);
-              drawPoints(score);
-              drawClock();
-              showBuffer();
+              else{
+                vg_draw_rectangle(100,100,500,500,20);
+                print_xpm(p.img,p.X,p.Y);
+                for(int i = 0; i < nObs; i++){
+                  if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
+                }
+                vg_draw_rectangle(p2.X,p2.Y,20,20,5);
+                drawPoints(600,0,maxScore);
+                drawPoints(835,0,score);
+                drawClock();
+                showBuffer();
+              }
             }
           }
           if (msg.m_notify.interrupts & mousebitno){
             mouse_ih();
             readBytes();
-            if (bIndex == 3) {
+            if (bIndex == 3 && ignoreFirstMousePackets==0) {
               //vg_draw_rectangle(p2.X,p2.Y,20,20,0);
               toPacket();
               p2.X+=(pckt.delta_x)/1;
@@ -324,14 +360,33 @@ int (proj_main_loop)(){
                   break;
                 }
               }
+              else if(pckt.mb && !tempIgnoreMiddleMouse){
+                for(int i = 0; i < nObs; i++)  if(!o[i].active){
+                  o[i].X = p2.X;
+                  o[i].Y = p2.Y;
+                  o[i].XLen = 64;
+                  o[i].YLen = 32;
+                  o[i].active = true;
+                  o[i].img = pic3;
+                  o[i].speed = 40;
+                  tempIgnoreMiddleMouse = true;
+                  break;
+                }
+              }
               if(!pckt.lb) tempIgnoreLeftMouse = false; //evitar repetidos
               if(!pckt.rb) tempIgnoreRightMouse = false;
+              if(!pckt.mb) tempIgnoreMiddleMouse = false;
               bIndex = 0;
               if(kbd_read == 0x81)
               {
                 mouse_write(0xf5);
                 endgame = true;
               }
+            }
+            else if(bIndex==3){
+              toPacket();
+              bIndex = 0;
+              ignoreFirstMousePackets--;
             }
           }
 
