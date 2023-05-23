@@ -68,6 +68,24 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
+void (saveNewHighScore)(int maxScore){
+  FILE *fp;
+
+  fp = fopen("../highScore.txt", "w");
+  fprintf(fp, "%d", maxScore);
+  fclose(fp);
+}
+
+int (readHighScore)(){
+  int out = 0;
+  FILE *fp;
+
+  fp = fopen("../highScore.txt", "r");
+  fscanf(fp, "%d", &out);
+  fclose(fp);
+  return out;
+}
+
 void(drawNumber)(int num, int x, int y){
   if(num == 0) print_xpm(num0,x,y);
   else if(num == 1) print_xpm(num1,x,y);
@@ -142,6 +160,7 @@ int (proj_main_loop)(){
   while(rtcReadSeconds(&second));
   day = (hour>=6 && hour<=19);
   int score = 0, maxScore = 0;
+  maxScore = readHighScore();
 
   bool lost = false;
   bool tempIgnoreLeftMouse = false, tempIgnoreRightMouse = false, tempIgnoreMiddleMouse = false;
@@ -171,14 +190,15 @@ int (proj_main_loop)(){
 
   srand(time(NULL));
   allocateBuffer();
-  bool endgame = false;
   //if(print_xpm(gajoTeste, gajoX, gajoY) != 0) {
    // return 1;
   //}
   bool left = false, right = false, up = false, down = false;
+
+  bool endgame = false;
   print_xpm(penguin,p.X,p.Y);
-  while( !endgame ) { 
-    
+  while(kbd_read != 0x81 || !endgame) { 
+    endgame = true;
     if((driver = driver_receive(ANY,&msg,&ipc_status))!=0){ //se houver algum erro a ler
     printf("Erro a ler");
     }
@@ -190,7 +210,7 @@ int (proj_main_loop)(){
             kbc_ih();
             if(kbd_read == 0x81){ //ESC
               mouse_write(0xf5);
-              endgame = true;
+              break;
             }
             else if(kbd_read == 0xe0){
                 bytes[0] = 0xe0;
@@ -293,7 +313,11 @@ int (proj_main_loop)(){
                       tempIgnoreLeftMouse = false;
                       tempIgnoreRightMouse = false;
                       tempIgnoreMiddleMouse = false;
-                      if(score > maxScore) maxScore = score;
+                      if(score > maxScore) 
+                      {
+                        maxScore = score;
+                        saveNewHighScore(maxScore);
+                      }
                     }
                   }
                 }
@@ -320,6 +344,7 @@ int (proj_main_loop)(){
             }
           }
           if (msg.m_notify.interrupts & mousebitno){
+            endgame = false;
             mouse_ih();
             readBytes();
             if (bIndex == 3 && ignoreFirstMousePackets==0) {
@@ -377,11 +402,6 @@ int (proj_main_loop)(){
               if(!pckt.rb) tempIgnoreRightMouse = false;
               if(!pckt.mb) tempIgnoreMiddleMouse = false;
               bIndex = 0;
-              if(kbd_read == 0x81)
-              {
-                mouse_write(0xf5);
-                endgame = true;
-              }
             }
             else if(bIndex==3){
               toPacket();
@@ -397,6 +417,7 @@ int (proj_main_loop)(){
       }
     }
   }
+  mouse_write(0xf5);
   freeBuffer();
   vg_exit();
   timer_unsubscribe_int();
