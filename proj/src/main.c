@@ -71,7 +71,7 @@ int main(int argc, char *argv[]){
 void (saveNewHighScore)(int maxScore){
   FILE *fp;
 
-  fp = fopen("../highScore.txt", "w");
+  fp = fopen("/home/lcom/labs/proj/highScore.txt", "w");
   fprintf(fp, "%d", maxScore);
   fclose(fp);
 }
@@ -80,7 +80,7 @@ int (readHighScore)(){
   int out = 0;
   FILE *fp;
   
-  fp = fopen("../highScore.txt", "r");
+  fp = fopen("/home/lcom/labs/proj/highScore.txt", "r");
   if(fp == NULL) return 0;
 
   fscanf(fp, "%d", &out);
@@ -103,8 +103,8 @@ void(drawNumber)(int num, int x, int y){
 
 void (drawClock)(){
   for(int i = 0; i < 9; i++){
-    if(clockStr[i]==':') print_xpm(symbolColon,10+(i*32),730);
-    else drawNumber(clockStr[i]-'0',10+(i*32),730);
+    if(clockStr[i]==':') print_xpm(symbolColon,10+(i*32),820);
+    else drawNumber(clockStr[i]-'0',10+(i*32),820);
   }
 }
 
@@ -173,7 +173,7 @@ int (proj_main_loop)(){
 
   for(int i = 0; i < nObs; i++) o[i].active = false;
 
-  p.img = penguin;
+  p.img = gajo0;
 
   p.X = 100;
   p.Y = 600;
@@ -260,71 +260,71 @@ int (proj_main_loop)(){
             while(rtcReadSeconds(&second));
             sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
             day = (hour>=6 && hour<=19);
-            //day = true;
             if(day) print_xpm(sun,50,50);
             else print_xpm(moon,50,50);
             if(timer_counter>=5){
                 if(!lost){ //numero arbitrario tbh
-                score++;
-                if(score % maxTime == 0){
-                  speedMul += 0.1;
-                }
-                
-                
-                if(left && !right && p.X>100){ //esquerda
-                  p.X-=20;
-                }
-                else if(right && !left && p.X<890){ //direita
-                  p.X+=20;
-                }
-                else if(up && !down && p.Y > 200){ //cima
-                  p.Y-=20;
-                }
-                else if(down && !up && p.Y < 600){ //cima
-                  p.Y+=20;
-                }
+                  
+                  score++;
+                  if(score % maxTime == 0){
+                    speedMul += 0.1;
+                  }
+                  
+                  
+                  if(left && !right && p.X>100){ //esquerda
+                    p.X-=20;
+                  }
+                  else if(right && !left && p.X<890){ //direita
+                    p.X+=20;
+                  }
+                  if(up && !down && p.Y > 200){ //cima
+                    p.Y-=20;
+                  }
+                  else if(down && !up && p.Y < 600){ //cima
+                    p.Y+=20;
+                  }
 
 
-                timer_counter = 0;
-                for(int i = 0; i < nObs; i++){
-                  if(o[i].active){
-                    o[i].Y += o[i].speed*speedMul;
-                    if((o[i].Y)>=vmi.YResolution) o[i].active = false;
-                    //if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
-                    if(intersects(p,o[i])){
-                      lost = true;
-                      left = false;
-                      right = false;
-                      up = false;
-                      down = false;
-                      tempIgnoreLeftMouse = false;
-                      tempIgnoreRightMouse = false;
-                      tempIgnoreMiddleMouse = false;
-                      if(score > maxScore) 
-                      {
-                        maxScore = score;
-                        saveNewHighScore(maxScore);
+                  timer_counter = 0;
+                  for(int i = 0; i < nObs; i++){
+                    if(o[i].active){
+                      o[i].Y += o[i].speed*speedMul;
+                      if((o[i].Y)>=vmi.YResolution) o[i].active = false;
+                      if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
+                      if(intersects(p,o[i])){
+                        lost = true;
+                        left = false;
+                        right = false;
+                        up = false;
+                        down = false;
+                        tempIgnoreLeftMouse = false;
+                        tempIgnoreRightMouse = false;
+                        tempIgnoreMiddleMouse = false;
+                        if(score > maxScore) 
+                        {
+                          maxScore = score;
+                          saveNewHighScore(maxScore);
+                        }
                       }
                     }
                   }
-                }
-                //if(lost) vg_draw_rectangle(100,100,500,500,20);
-                //print_xpm(p.img,p.X,p.Y);
+                if(lost) vg_draw_rectangle(100,100,500,500,0xff0000);
+                print_xpm(p.img,p.X,p.Y);
                 vg_draw_rectangle(p2.X,p2.Y,20,20,0xffff00);
-                //drawPoints(600,0,maxScore);
-                //drawPoints(835,0,score);
-                //drawClock();
+                drawPoints(710,0,maxScore);
+                drawPoints(945,0,score);
+                drawClock();
                 showBuffer();
               }
               else{
-                vg_draw_rectangle(100,100,500,500,20);
-                print_xpm(p.img,p.X,p.Y);
+                timer_counter = 0; 
                 for(int i = 0; i < nObs; i++){
                   if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
                 }
-                vg_draw_rectangle(p2.X,p2.Y,20,20,5);
-                drawPoints(600,0,maxScore);
-                drawPoints(835,0,score);
+                vg_draw_rectangle(100,100,500,500,0xff0000);
+                print_xpm(p.img,p.X,p.Y);
+                drawPoints(710,0,maxScore);
+                drawPoints(945,0,score);
                 drawClock();
                 showBuffer();
               }
@@ -335,13 +335,11 @@ int (proj_main_loop)(){
             mouse_ih();
             readBytes();
             if (bIndex == 3 && ignoreFirstMousePackets==0) {
-              //vg_draw_rectangle(p2.X,p2.Y,20,20,0);
               toPacket();
               p2.X+=(pckt.delta_x)/1;
               p2.Y-=(pckt.delta_y)/1;
               p2.X = clamp(p2.X,120,880);
               p2.Y = clamp(p2.Y, 75, 300);
-              //vg_draw_rectangle(p2.X,p2.Y,20,20,5);
               if(pckt.lb && !tempIgnoreLeftMouse){
                 int n = 0;
                 for(int i = 0; i < nObs; i++){
