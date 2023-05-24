@@ -121,14 +121,14 @@ uint32_t (B)(uint32_t first){
 
 int (print_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
   xpm_image_t img;
-  uint8_t* colours = xpm_load(xpm, XPM_8_8_8_8, &img);
+  uint32_t* colours = (uint32_t *) xpm_load(xpm, XPM_8_8_8_8, &img);
   int i = 0;
   for (int h = 0 ; h < img.height ; h++) {
     for (int w = 0 ; w < img.width ; w++) {
-      if ((uint32_t)colours[i]!=0 && (x+w)<vmi.XResolution && (y+h)<vmi.YResolution) {
-        memcpy(&buffer[((y+h)*vmi.XResolution+x+w)*4],&colours[i],4);
+      if (colours[i]!=0 && (x+w)<vmi.XResolution && (y+h)<vmi.YResolution) {
+        vg_draw_pixel(x+w,y+h,colours[i]);
       }
-      i+=4;
+      i+=1;
     }
   }
   return 0;
