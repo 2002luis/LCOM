@@ -227,6 +227,7 @@ int (proj_main_loop)(){
             kbc_ih();
             if(kbd_read == 0x81){ //ESC
               while(mouse_write(0xf5));
+              while(mouse_unsubscribe());
               break;
             }
             else if(kbd_read == 0xe0){
@@ -276,16 +277,16 @@ int (proj_main_loop)(){
             
             if(timer_counter>=5){
               clearBuffer();
-              
+              while(rtcReadHours(&hour));
+              while(rtcReadMinutes(&minute));
+              while(rtcReadSeconds(&second));
+              sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
               if(!menu){
                 p.curAnim++;
                 if(p.curAnim>=p.maxAnim) p.curAnim = 0;
                 clearBuffer();
                 drawBackground();
-                while(rtcReadHours(&hour));
-                while(rtcReadMinutes(&minute));
-                while(rtcReadSeconds(&second));
-                sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
+                
                 day = (hour>=6 && hour<=19);
                 if(day) print_xpm(sun,50,50);
                 else print_xpm(moon,50,50);
@@ -334,8 +335,9 @@ int (proj_main_loop)(){
                       }
                     }
                   }
-                if(lost) print_xpm(game_over,400,400);
+                
                 print_xpm(p.img[p.curAnim],p.X,p.Y);
+                if(lost) print_xpm(game_over,400,400);
                 print_xpm(cursor,p2.X,p2.Y);
                 drawPoints(710,0,maxScore);
                 drawPoints(945,0,score);
@@ -343,21 +345,22 @@ int (proj_main_loop)(){
                 showBuffer();
                 }
                 else{
-                  timer_counter = 0; 
+                  timer_counter = 0;
+                  print_xpm(p.img[0],p.X,p.Y);
                   for(int i = 0; i < nObs; i++){
                     if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
                   }
                   print_xpm(game_over,400,400);
-                  print_xpm(p.img[p.curAnim],p.X,p.Y);
                   drawPoints(710,0,maxScore);
                   drawPoints(945,0,score);
                   drawClock();
                   showBuffer();
                 }
               }
-              else{
+              else{ //if (menu)
                 drawBackground();
-                
+                drawPoints(710,0,maxScore);
+                drawClock();
                 timer_counter = 0;
                 print_xpm(cursor,p2.X,p2.Y);
                 if(kbd_read == 0x13)
@@ -371,21 +374,21 @@ int (proj_main_loop)(){
             }
           }
           if (msg.m_notify.interrupts & mousebitno){
-            endgame = menu;
+            endgame = false;
             mouse_ih();
             readBytes();
             if (bIndex == 3 && ignoreFirstMousePackets==0) {
               toPacket();
               p2.X+=(pckt.delta_x)/1;
               p2.Y-=(pckt.delta_y)/1;
-              p2.X = clamp(p2.X,120,1000);
+              p2.X = clamp(p2.X,120,980);
               p2.Y = clamp(p2.Y, 75, 300);
               if(!menu){
                 if(pckt.lb && !tempIgnoreLeftMouse){
                   int n = 0;
                   for(int i = 0; i < nObs; i++){
                     if(!o[i].active && n < 3){
-                      o[i].X = p2.X;
+                      o[i].X = clamp(p2.X,100,780);
                       o[i].Y = p2.Y;
                       o[i].XLen = 200;
                       o[i].YLen = 100;
@@ -400,7 +403,7 @@ int (proj_main_loop)(){
                 }
                 else if(pckt.rb && !tempIgnoreRightMouse){
                   for(int i = 0; i < nObs; i++)  if(!o[i].active){
-                    o[i].X = p2.X;
+                    o[i].X = clamp(p2.X,100,880);
                     o[i].Y = p2.Y;
                     o[i].XLen = 100;
                     o[i].YLen = 200;
@@ -413,7 +416,7 @@ int (proj_main_loop)(){
                 }
                 else if(pckt.mb && !tempIgnoreMiddleMouse){
                   for(int i = 0; i < nObs; i++)  if(!o[i].active){
-                    o[i].X = p2.X;
+                    o[i].X = clamp(p2.X,100,916);
                     o[i].Y = p2.Y;
                     o[i].XLen = 64;
                     o[i].YLen = 32;
@@ -449,6 +452,6 @@ int (proj_main_loop)(){
   freeBuffer();
   vg_exit();
   timer_unsubscribe_int();
-  mouse_unsubscribe();
+  //while(mouse_unsubscribe());
   return kbd_unsubscribe();
 }
