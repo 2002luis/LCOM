@@ -290,13 +290,13 @@ int (proj_main_loop)(){
                   if(left && !right && p.X>100){ //esquerda
                     p.X-=20;
                   }
-                  else if(right && !left && p.X<890){ //direita
+                  else if(right && !left && p.X<970){ //direita
                     p.X+=20;
                   }
-                  if(up && !down && p.Y > 200){ //cima
+                  if(up && !down && p.Y > 400){ //cima
                     p.Y-=20;
                   }
-                  else if(down && !up && p.Y < 600){ //cima
+                  else if(down && !up && p.Y < 700){ //cima
                     p.Y+=20;
                   }
 
@@ -324,7 +324,7 @@ int (proj_main_loop)(){
                       }
                     }
                   }
-                if(lost) vg_draw_rectangle(100,100,500,500,0xff0000);
+                if(lost) print_xpm(game_over,400,400);
                 print_xpm(p.img,p.X,p.Y);
                 print_xpm(cursor,p2.X,p2.Y);
                 drawPoints(710,0,maxScore);
@@ -337,7 +337,7 @@ int (proj_main_loop)(){
                   for(int i = 0; i < nObs; i++){
                     if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
                   }
-                  vg_draw_rectangle(100,100,500,500,0xff0000);
+                  print_xpm(game_over,400,400);
                   print_xpm(p.img,p.X,p.Y);
                   drawPoints(710,0,maxScore);
                   drawPoints(945,0,score);
