@@ -7,6 +7,7 @@
 #include "vg.h"
 #include "i8254.h"
 #include "xpm2.h"
+#include "xpmbig.h"
 #include "rtc.h"
 
 
@@ -141,10 +142,15 @@ bool (intersects)(struct player p, struct obstacle o){
 
 int (proj_main_loop)(){
 
+  bool menu = true;
+  
+
   if(vg_init((uint16_t) 0x14c) == NULL) {
     vg_exit();
     return 1;
   }
+
+  
 
   struct pointer p2;
 
@@ -192,12 +198,17 @@ int (proj_main_loop)(){
 
   srand(time(NULL));
   allocateBuffer();
+  loadBackground(bgXpm);
 
   bool left = false, right = false, up = false, down = false;
   bool endgame = false;
 
+  clearBuffer();
+  print_xpm(titleXpm,150,200);
+  showBuffer();
+
   while(kbd_read != 0x81 || !endgame) { 
-    endgame = true;
+    endgame = !menu;
     if((driver = driver_receive(ANY,&msg,&ipc_status))!=0){ //se houver algum erro a ler
     printf("Erro a ler");
     }
@@ -208,7 +219,7 @@ int (proj_main_loop)(){
           if(msg.m_notify.interrupts & kbdbitno){ //SE TIVER VINDO DO SITIO QUE EU QUERO
             kbc_ih();
             if(kbd_read == 0x81){ //ESC
-              mouse_write(0xf5);
+              while(mouse_write(0xf5));
               break;
             }
             else if(kbd_read == 0xe0){
@@ -254,15 +265,20 @@ int (proj_main_loop)(){
           }
           if(msg.m_notify.interrupts & timerbitno){
             timer_int_handler();
-            clearBuffer();
-            while(rtcReadHours(&hour));
-            while(rtcReadMinutes(&minute));
-            while(rtcReadSeconds(&second));
-            sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
-            day = (hour>=6 && hour<=19);
-            if(day) print_xpm(sun,50,50);
-            else print_xpm(moon,50,50);
+            
+            
             if(timer_counter>=5){
+              
+              if(!menu){
+                clearBuffer();
+                drawBackground();
+                while(rtcReadHours(&hour));
+                while(rtcReadMinutes(&minute));
+                while(rtcReadSeconds(&second));
+                sprintf(clockStr,"%02d:%02d:%02d",hour,minute,second);
+                day = (hour>=6 && hour<=19);
+                if(day) print_xpm(sun,50,50);
+                else print_xpm(moon,50,50);
                 if(!lost){ //numero arbitrario tbh
                   
                   score++;
@@ -310,28 +326,37 @@ int (proj_main_loop)(){
                   }
                 if(lost) vg_draw_rectangle(100,100,500,500,0xff0000);
                 print_xpm(p.img,p.X,p.Y);
-                vg_draw_rectangle(p2.X,p2.Y,20,20,0xffff00);
+                print_xpm(cursor,p2.X,p2.Y);
                 drawPoints(710,0,maxScore);
                 drawPoints(945,0,score);
                 drawClock();
                 showBuffer();
+                }
+                else{
+                  timer_counter = 0; 
+                  for(int i = 0; i < nObs; i++){
+                    if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
+                  }
+                  vg_draw_rectangle(100,100,500,500,0xff0000);
+                  print_xpm(p.img,p.X,p.Y);
+                  drawPoints(710,0,maxScore);
+                  drawPoints(945,0,score);
+                  drawClock();
+                  showBuffer();
+                }
               }
               else{
-                timer_counter = 0; 
-                for(int i = 0; i < nObs; i++){
-                  if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
-                }
-                vg_draw_rectangle(100,100,500,500,0xff0000);
-                print_xpm(p.img,p.X,p.Y);
-                drawPoints(710,0,maxScore);
-                drawPoints(945,0,score);
-                drawClock();
-                showBuffer();
+                //testBackground();
+                timer_counter = 0;
+                //print_xpm(cursor,p2.X,p2.Y);
+                //print_xpm(titleXpm,150,350);
+                if(kbd_read == 0x13) menu = false;
+                //showBuffer();
               }
             }
           }
           if (msg.m_notify.interrupts & mousebitno){
-            endgame = false;
+            endgame = menu;
             mouse_ih();
             readBytes();
             if (bIndex == 3 && ignoreFirstMousePackets==0) {
@@ -340,52 +365,54 @@ int (proj_main_loop)(){
               p2.Y-=(pckt.delta_y)/1;
               p2.X = clamp(p2.X,120,880);
               p2.Y = clamp(p2.Y, 75, 300);
-              if(pckt.lb && !tempIgnoreLeftMouse){
-                int n = 0;
-                for(int i = 0; i < nObs; i++){
-                  if(!o[i].active && n < 3){
+              if(!menu){
+                if(pckt.lb && !tempIgnoreLeftMouse){
+                  int n = 0;
+                  for(int i = 0; i < nObs; i++){
+                    if(!o[i].active && n < 3){
+                      o[i].X = p2.X;
+                      o[i].Y = p2.Y;
+                      o[i].XLen = 200;
+                      o[i].YLen = 100;
+                      o[i].active = true;
+                      o[i].img = obstacleWide;
+                      o[i].speed = 5;
+                      tempIgnoreLeftMouse = true;
+                      break;
+                    }
+                    else if(o[i].XLen == 200) n++; //para nao deixar ter 3 compridos ao mesmo tempo (senao nao da para evitar)
+                  }
+                }
+                else if(pckt.rb && !tempIgnoreRightMouse){
+                  for(int i = 0; i < nObs; i++)  if(!o[i].active){
                     o[i].X = p2.X;
                     o[i].Y = p2.Y;
-                    o[i].XLen = 200;
-                    o[i].YLen = 100;
+                    o[i].XLen = 100;
+                    o[i].YLen = 200;
                     o[i].active = true;
-                    o[i].img = obstacleWide;
-                    o[i].speed = 5;
-                    tempIgnoreLeftMouse = true;
+                    o[i].img = ComboioCP;
+                    o[i].speed = 20;
+                    tempIgnoreRightMouse = true;
                     break;
                   }
-                  else if(o[i].XLen == 200) n++; //para nao deixar ter 3 compridos ao mesmo tempo (senao nao da para evitar)
                 }
-              }
-              else if(pckt.rb && !tempIgnoreRightMouse){
-                for(int i = 0; i < nObs; i++)  if(!o[i].active){
-                  o[i].X = p2.X;
-                  o[i].Y = p2.Y;
-                  o[i].XLen = 100;
-                  o[i].YLen = 200;
-                  o[i].active = true;
-                  o[i].img = ComboioCP;
-                  o[i].speed = 20;
-                  tempIgnoreRightMouse = true;
-                  break;
+                else if(pckt.mb && !tempIgnoreMiddleMouse){
+                  for(int i = 0; i < nObs; i++)  if(!o[i].active){
+                    o[i].X = p2.X;
+                    o[i].Y = p2.Y;
+                    o[i].XLen = 64;
+                    o[i].YLen = 32;
+                    o[i].active = true;
+                    o[i].img = pic3;
+                    o[i].speed = 40;
+                    tempIgnoreMiddleMouse = true;
+                    break;
+                  }
                 }
+                if(!pckt.lb) tempIgnoreLeftMouse = false; //evitar repetidos
+                if(!pckt.rb) tempIgnoreRightMouse = false;
+                if(!pckt.mb) tempIgnoreMiddleMouse = false;
               }
-              else if(pckt.mb && !tempIgnoreMiddleMouse){
-                for(int i = 0; i < nObs; i++)  if(!o[i].active){
-                  o[i].X = p2.X;
-                  o[i].Y = p2.Y;
-                  o[i].XLen = 64;
-                  o[i].YLen = 32;
-                  o[i].active = true;
-                  o[i].img = pic3;
-                  o[i].speed = 40;
-                  tempIgnoreMiddleMouse = true;
-                  break;
-                }
-              }
-              if(!pckt.lb) tempIgnoreLeftMouse = false; //evitar repetidos
-              if(!pckt.rb) tempIgnoreRightMouse = false;
-              if(!pckt.mb) tempIgnoreMiddleMouse = false;
               bIndex = 0;
             }
             else if(bIndex==3){
@@ -402,7 +429,7 @@ int (proj_main_loop)(){
       }
     }
   }
-  mouse_write(0xf5);
+  while(mouse_write(0xf5));
   freeBuffer();
   vg_exit();
   timer_unsubscribe_int();

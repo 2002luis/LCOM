@@ -4,6 +4,7 @@
 
 static void *video_mem;
 uint8_t* buffer;
+uint8_t* background;
 vbe_mode_info_t vmi;
 
 void *(vg_init)(uint16_t mode) {
@@ -74,16 +75,29 @@ int (map_vram)(uint16_t mode) {
 
 int(vg_draw_pixel)(uint16_t x, uint16_t y, uint32_t color) {
 
-  uint8_t bytes = (vmi.BitsPerPixel + 7) / 8;
-  uint8_t* base = buffer + (y * vmi. XResolution + x) * bytes;
+    uint8_t bytes = (vmi.BitsPerPixel + 7) / 8;
+    uint8_t* base = buffer + (y * vmi. XResolution + x) * bytes;
 
-  if(x >= vmi.XResolution || y >= vmi.YResolution) return 0;
-  for(uint8_t i = 0; i < bytes; i++){
-    *base = color >> (i * 8);
-    base++;
-  }
+    if(x >= vmi.XResolution || y >= vmi.YResolution) return 0;
+    for(uint8_t i = 0; i < bytes; i++){
+        *base = color >> (i * 8);
+        base++;
+    }
 
-  return 0;
+    return 0;
+}
+
+int (vg_draw_pixel_to_background)(uint16_t x, uint16_t y, uint32_t color){
+    uint8_t bytes = (vmi.BitsPerPixel + 7) / 8;
+    uint8_t* base = background + (y * vmi. XResolution + x) * bytes;
+
+    if(x >= vmi.XResolution || y >= vmi.YResolution) return 0;
+    for(uint8_t i = 0; i < bytes; i++){
+        *base = color >> (i * 8);
+        base++;
+    }
+
+    return 0;
 }
 
 int(vg_draw_hline)(uint16_t x, uint16_t y, uint16_t width, uint32_t color) {
@@ -120,32 +134,55 @@ uint32_t (B)(uint32_t first){
 }
 
 int (print_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-  xpm_image_t img;
-  uint32_t* colours = (uint32_t *) xpm_load(xpm, XPM_8_8_8_8, &img);
-  int i = 0;
-  for (int h = 0 ; h < img.height ; h++) {
-    for (int w = 0 ; w < img.width ; w++) {
-      if (colours[i]!=0 && (x+w)<vmi.XResolution && (y+h)<vmi.YResolution) {
-        vg_draw_pixel(x+w,y+h,colours[i]);
-      }
-      i+=1;
+    xpm_image_t img;
+    uint32_t* colours = (uint32_t *) xpm_load(xpm, XPM_8_8_8_8, &img);
+    int i = 0;
+    for (int h = 0 ; h < img.height ; h++) {
+        for (int w = 0 ; w < img.width ; w++) {
+            if (colours[i]!=0 && (x+w)<vmi.XResolution && (y+h)<vmi.YResolution) {
+                vg_draw_pixel(x+w,y+h,colours[i]);
+            }
+            i+=1;
+        }
     }
-  }
-  return 0;
+    return 0;
+}
+
+int (loadBackground)(xpm_map_t xpm){
+    xpm_image_t img;
+    uint32_t* colours = (uint32_t *) xpm_load(xpm, XPM_8_8_8_8, &img);
+    memset(background,0,vmi.XResolution*vmi.YResolution*4);
+    //if(img.width!=vmi.XResolution || img.height!=vmi.YResolution) return 1;
+    
+    int i = 0;
+    for (int h = 0 ; h < img.height ; h++) {
+        for (int w = 0 ; w < img.width ; w++) {
+
+            vg_draw_pixel_to_background(w,h,colours[i]);
+            i+=1;
+        }
+    }
+    return 0;
 }
 
 void (allocateBuffer)(){
-  buffer = (uint8_t *)malloc(vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
+    buffer = (uint8_t *)malloc(vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
+    background = (uint8_t *)malloc(vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
 }
 
 void (showBuffer)(){
-  memcpy((uint8_t*)video_mem, buffer, vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
+    memcpy((uint8_t*)video_mem, buffer, vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
 }
 
 void (clearBuffer)(){
-  memset(buffer, 0, vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
+    memset(buffer,0,vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8));
+}
+
+void (drawBackground)(){
+    memcpy(buffer, background, vmi.XResolution*vmi.YResolution*((vmi.BitsPerPixel + 7) / 8)); 
 }
 
 void (freeBuffer)(){
-  free(buffer); 
+    free(buffer); 
+    free(background);
 }

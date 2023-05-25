@@ -8,6 +8,8 @@ void *(vg_init)(uint16_t mode);
 int (map_vram)(uint16_t mode);
 
 int (vg_draw_pixel)(uint16_t x, uint16_t y, uint32_t color);
+
+int (vg_draw_pixel_to_background)(uint16_t x, uint16_t y, uint32_t color);
  
 int (vg_draw_hline)(uint16_t x, uint16_t y, uint16_t len, uint32_t color);
  
@@ -25,10 +27,14 @@ uint32_t (B)(uint32_t first);
 
 int (print_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y);
 
+int (loadBackground)(xpm_map_t xpm);
+
 void (allocateBuffer)();
 
 void (showBuffer)();
 
 void (clearBuffer)();
+
+void (drawBackground)();
 
 void (freeBuffer)();
