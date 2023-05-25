@@ -198,14 +198,13 @@ int (proj_main_loop)(){
 
   srand(time(NULL));
   allocateBuffer();
-  loadBackground(bgXpm);
+  loadBackground(titleXpm);
 
   bool left = false, right = false, up = false, down = false;
   bool endgame = false;
 
   clearBuffer();
-  print_xpm(titleXpm,150,200);
-  showBuffer();
+  //print_xpm(titleXpm,150,200);
 
   while(kbd_read != 0x81 || !endgame) { 
     endgame = !menu;
@@ -268,6 +267,7 @@ int (proj_main_loop)(){
             
             
             if(timer_counter>=5){
+              clearBuffer();
               
               if(!menu){
                 clearBuffer();
@@ -346,12 +346,16 @@ int (proj_main_loop)(){
                 }
               }
               else{
-                //testBackground();
+                drawBackground();
+                
                 timer_counter = 0;
-                //print_xpm(cursor,p2.X,p2.Y);
-                //print_xpm(titleXpm,150,350);
-                if(kbd_read == 0x13) menu = false;
-                //showBuffer();
+                print_xpm(cursor,p2.X,p2.Y);
+                if(kbd_read == 0x13)
+                {
+                  menu = false;
+                  loadBackground(bgXpm);
+                }
+                showBuffer();
               }
             }
           }
@@ -363,7 +367,7 @@ int (proj_main_loop)(){
               toPacket();
               p2.X+=(pckt.delta_x)/1;
               p2.Y-=(pckt.delta_y)/1;
-              p2.X = clamp(p2.X,120,880);
+              p2.X = clamp(p2.X,120,1000);
               p2.Y = clamp(p2.Y, 75, 300);
               if(!menu){
                 if(pckt.lb && !tempIgnoreLeftMouse){
