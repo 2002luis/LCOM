@@ -1140,7 +1140,7 @@ static xpm_row_t const gajo1[] = {
 
 static xpm_row_t const gajo2[] = {
 "64 96 6 1 ",
-"  c #ffffff",
+"  c #000000",
 ". c #000001",
 "X c #FF6A00",
 "o c #7F3300",

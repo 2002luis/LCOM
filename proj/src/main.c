@@ -33,7 +33,8 @@ struct player{
   int X;
   int Y;
   int XLen, YLen;
-  xpm_row_t* img;
+  xpm_row_t** img;
+  int curAnim, maxAnim;
 };
 
 struct obstacle{
@@ -179,12 +180,19 @@ int (proj_main_loop)(){
 
   for(int i = 0; i < nObs; i++) o[i].active = false;
 
-  p.img = gajo0;
+  //p.img = gajo0;
 
   p.X = 100;
   p.Y = 600;
   p.XLen = 64;
   p.YLen = 64;
+  p.img = malloc(sizeof(xpm_row_t*)*2);
+  p.img[0] = gajo1;
+  p.img[1] = gajo2;
+  p.maxAnim = 2;
+  p.curAnim = 0;
+
+
   uint8_t kbdbitno = 0, timerbitno, mousebitno;
   uint8_t bytes[2] = {0,0};
   if(kbd_subscribe(&kbdbitno)) return 1;
@@ -270,6 +278,8 @@ int (proj_main_loop)(){
               clearBuffer();
               
               if(!menu){
+                p.curAnim++;
+                if(p.curAnim>=p.maxAnim) p.curAnim = 0;
                 clearBuffer();
                 drawBackground();
                 while(rtcReadHours(&hour));
@@ -325,7 +335,7 @@ int (proj_main_loop)(){
                     }
                   }
                 if(lost) print_xpm(game_over,400,400);
-                print_xpm(p.img,p.X,p.Y);
+                print_xpm(p.img[p.curAnim],p.X,p.Y);
                 print_xpm(cursor,p2.X,p2.Y);
                 drawPoints(710,0,maxScore);
                 drawPoints(945,0,score);
@@ -338,7 +348,7 @@ int (proj_main_loop)(){
                     if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
                   }
                   print_xpm(game_over,400,400);
-                  print_xpm(p.img,p.X,p.Y);
+                  print_xpm(p.img[p.curAnim],p.X,p.Y);
                   drawPoints(710,0,maxScore);
                   drawPoints(945,0,score);
                   drawClock();
@@ -353,7 +363,8 @@ int (proj_main_loop)(){
                 if(kbd_read == 0x13)
                 {
                   menu = false;
-                  loadBackground(bgXpm);
+                  if(day) loadBackground(bgXpmDAY);
+                  else loadBackground(bgXpmNIGHT);
                 }
                 showBuffer();
               }
@@ -433,6 +444,7 @@ int (proj_main_loop)(){
       }
     }
   }
+  free(p.img);
   while(mouse_write(0xf5));
   freeBuffer();
   vg_exit();
