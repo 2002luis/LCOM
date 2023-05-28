@@ -456,9 +456,9 @@ int (proj_main_loop)(){
       }
     }
   }
+
+
   free(p.img);
-  
-  
   timer_unsubscribe_int();
   kbd_unsubscribe();
   mouse_unsubscribe();

@@ -24,7 +24,7 @@ int (mouse_unsubscribe)(){
 
 
 void (mouse_ih)(){
-  get_KBD_out(0x60, &curByte, 1);
+  get_KBD_out(0x60, &curByte);
 }
 
 
@@ -78,7 +78,7 @@ int (get_KBD_stat)(uint8_t* stat) {
   return util_sys_inb(0x64, stat);
 }
 
-int (get_KBD_out)(uint8_t port, uint8_t *out, uint8_t mouse) {
+int (get_KBD_out)(uint8_t port, uint8_t *out) {
   uint8_t stat;
   uint8_t attempts = 20;
   while (attempts) {
@@ -87,7 +87,7 @@ int (get_KBD_out)(uint8_t port, uint8_t *out, uint8_t mouse) {
       if(util_sys_inb(port, out) != 0) return 1;
       if((stat & BIT(7)) != 0) return 1;
       if((stat & BIT(6)) != 0) return 1;
-      if (mouse && !(stat & BIT(5))) return 1;
+      if (!(stat & BIT(5))) return 1;
       return 0;
     }
     tickdelay(micros_to_ticks(20000));
