@@ -248,22 +248,19 @@ int (proj_main_loop)(){
             else{
                 //bool make = !(kbd_read & BIT(7));
                 if(!lost){
-                if(bytes[0] == 0xe0){
+                  if(bytes[0] == 0xe0){
                     bytes[1] = kbd_read;
-
-                    if(bytes[1] == 0x4b) left = true;
-                    else if(bytes[1] == 0xcb) left = false;
-                    else if(bytes[1] == 0x4d) right = true;
-                    else if(bytes[1] == 0xcd) right = false;
-                    else if(bytes[1] == 0x48) up = true;
-                    else if(bytes[1] == 0xc8) up = false;
-                    else if(bytes[1] == 0x50) down = true;
-                    else if(bytes[1] == 0xd0) down = false;
-
-                    
                   }
                   else {
-                      bytes[0] = kbd_read;
+                    bytes[0] = kbd_read;
+                    if(bytes[0] == 0x1e) left = true;
+                    else if(bytes[0] == 0x9e) left = false;
+                    else if(bytes[0] == 0x20) right = true;
+                    else if(bytes[0] == 0xa0) right = false;
+                    else if(bytes[0] == 0x11) up = true;
+                    else if(bytes[0] == 0x91) up = false;
+                    else if(bytes[0] == 0x1f) down = true;
+                    else if(bytes[0] == 0x9f) down = false;
                   }
                 }
                 else{
