@@ -70,6 +70,8 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
+
+
 void (saveNewHighScore)(int maxScore){
   FILE *fp;
 
@@ -206,7 +208,7 @@ int (proj_main_loop)(){
 
   srand(time(NULL));
   allocateBuffer();
-  loadBackground(titleXpm);
+  loadBackground(minixSurfersXpm);
 
   bool left = false, right = false, up = false, down = false;
   bool endgame = false;
@@ -227,7 +229,7 @@ int (proj_main_loop)(){
             kbc_ih();
             if(kbd_read == 0x81){ //ESC
               while(mouse_write(0xf5));
-              while(mouse_unsubscribe());
+              endgame = true;
               break;
             }
             else if(kbd_read == 0xe0){
@@ -287,9 +289,9 @@ int (proj_main_loop)(){
                 clearBuffer();
                 drawBackground();
                 
-                day = (hour>=6 && hour<=19);
-                if(day) print_xpm(sun,50,50);
-                else print_xpm(moon,50,50);
+                //day = (hour>=6 && hour<=19);
+                //if(day) print_xpm(sun,50,50);
+                //else print_xpm(moon,50,50);
                 if(!lost){ //numero arbitrario tbh
                   
                   score++;
@@ -313,6 +315,7 @@ int (proj_main_loop)(){
 
 
                   timer_counter = 0;
+
                   for(int i = 0; i < nObs; i++){
                     if(o[i].active){
                       o[i].Y += o[i].speed*speedMul;
@@ -362,13 +365,17 @@ int (proj_main_loop)(){
                 drawPoints(710,0,maxScore);
                 drawClock();
                 timer_counter = 0;
-                print_xpm(cursor,p2.X,p2.Y);
-                if(kbd_read == 0x13)
+                
+                if(!(p2.X<474 || p2.X>675 || p2.Y<647 || p2.Y>720))
                 {
-                  menu = false;
-                  if(day) loadBackground(bgXpmDAY);
-                  else loadBackground(bgXpmNIGHT);
+                  print_xpm(play2,474,648);
+                  if(pckt.lb){
+                    menu = false;
+                    if(day) loadBackground(bgXpmDAY);
+                    else loadBackground(bgXpmNIGHT);
+                  }
                 }
+                print_xpm(cursor,p2.X,p2.Y);
                 showBuffer();
               }
             }
@@ -381,9 +388,11 @@ int (proj_main_loop)(){
               toPacket();
               p2.X+=(pckt.delta_x)/1;
               p2.Y-=(pckt.delta_y)/1;
-              p2.X = clamp(p2.X,120,980);
-              p2.Y = clamp(p2.Y, 75, 300);
+              p2.X = clamp(p2.X,0,1152);
+              p2.Y = clamp(p2.Y,0,864);
               if(!menu){
+                p2.X = clamp(p2.X,120,980);
+                p2.Y = clamp(p2.Y, 75, 300);
                 if(pckt.lb && !tempIgnoreLeftMouse){
                   int n = 0;
                   for(int i = 0; i < nObs; i++){
@@ -448,10 +457,15 @@ int (proj_main_loop)(){
     }
   }
   free(p.img);
-  while(mouse_write(0xf5));
+  
+  
+  timer_unsubscribe_int();
+  kbd_unsubscribe();
+  mouse_unsubscribe();
+  mouse_write(0xf5);
   freeBuffer();
   vg_exit();
-  timer_unsubscribe_int();
   //while(mouse_unsubscribe());
-  return kbd_unsubscribe();
+  
+  return 0;
 }
