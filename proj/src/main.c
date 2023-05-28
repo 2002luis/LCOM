@@ -349,7 +349,8 @@ int (proj_main_loop)(){
                 }
                 else{
                   timer_counter = 0;
-                  print_xpm(p.img[0],p.X,p.Y);
+                  print_xpm(cursor,p2.X,p2.Y);
+                  print_xpm(morte,p.X,p.Y);
                   for(int i = 0; i < nObs; i++){
                     if(o[i].active) print_xpm(o[i].img,o[i].X,o[i].Y);
                   }
@@ -390,7 +391,7 @@ int (proj_main_loop)(){
               p2.Y-=(pckt.delta_y)/1;
               p2.X = clamp(p2.X,0,1152);
               p2.Y = clamp(p2.Y,0,864);
-              if(!menu){
+              if(!menu && !lost){
                 p2.X = clamp(p2.X,120,980);
                 p2.Y = clamp(p2.Y, 75, 300);
                 if(pckt.lb && !tempIgnoreLeftMouse){
@@ -425,13 +426,13 @@ int (proj_main_loop)(){
                 }
                 else if(pckt.mb && !tempIgnoreMiddleMouse){
                   for(int i = 0; i < nObs; i++)  if(!o[i].active){
-                    o[i].X = clamp(p2.X,100,916);
+                    o[i].X = clamp(p2.X,100,958);
                     o[i].Y = p2.Y;
-                    o[i].XLen = 64;
-                    o[i].YLen = 32;
+                    o[i].XLen = 22;
+                    o[i].YLen = 58;
                     o[i].active = true;
-                    o[i].img = pic3;
-                    o[i].speed = 40;
+                    o[i].img = missil;
+                    o[i].speed = 60;
                     tempIgnoreMiddleMouse = true;
                     break;
                   }
